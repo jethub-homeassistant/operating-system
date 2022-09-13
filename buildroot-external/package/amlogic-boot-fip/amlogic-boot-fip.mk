@@ -5,7 +5,7 @@
 #
 ################################################################################
 
-AMLOGIC_BOOT_FIP_VERSION = 7ff0004e0e4d261ba81334a2f46302bd06704aca
+AMLOGIC_BOOT_FIP_VERSION = f49ee39e1c6988b8ddb24f4e5a63286d133864cb
 AMLOGIC_BOOT_FIP_SITE = https://github.com/LibreELEC/amlogic-boot-fip
 AMLOGIC_BOOT_FIP_SITE_METHOD = git
 AMLOGIC_BOOT_FIP_INSTALL_IMAGES = YES
