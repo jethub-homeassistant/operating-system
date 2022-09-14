@@ -1,0 +1,24 @@
+From fd98f9ebd89641f0c0c1688cf23ee7bec10df564 Mon Sep 17 00:00:00 2001
+From: Vyacheslav Bocharov <adeep@lexina.in>
+Date: Thu, 1 Sep 2022 14:13:16 +0300
+Subject: [PATCH 2/4] Add EXPORT_SYMBOL_GPL(sched_setscheduler);
+
+---
+ kernel/sched/core.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index d4af56927a4d..8edde260d372 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -7634,6 +7634,7 @@ int sched_setscheduler(struct task_struct *p, int policy,
+ {
+ 	return _sched_setscheduler(p, policy, param, true);
+ }
++EXPORT_SYMBOL_GPL(sched_setscheduler);
+ 
+ int sched_setattr(struct task_struct *p, const struct sched_attr *attr)
+ {
+-- 
+2.30.2
+
