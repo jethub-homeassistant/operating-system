@@ -1,0 +1,57 @@
+From 64b86fe3846ed1cffefdc1ed2d840a1e50462bee Mon Sep 17 00:00:00 2001
+From: Vyacheslav Bocharov <adeep@lexina.in>
+Date: Tue, 30 Aug 2022 12:21:11 +0300
+Subject: [PATCH 1/4] Add aml_wifi aml_bt to dts j110-rev3
+
+---
+ .../meson-axg-jethome-jethub-j110-rev-3.dts   | 30 +++++++++++++++++++
+ 1 file changed, 30 insertions(+)
+
+diff --git a/arch/arm64/boot/dts/amlogic/meson-axg-jethome-jethub-j110-rev-3.dts b/arch/arm64/boot/dts/amlogic/meson-axg-jethome-jethub-j110-rev-3.dts
+index c2d22b00c1cd..1b181becec00 100644
+--- a/arch/arm64/boot/dts/amlogic/meson-axg-jethome-jethub-j110-rev-3.dts
++++ b/arch/arm64/boot/dts/amlogic/meson-axg-jethome-jethub-j110-rev-3.dts
+@@ -18,6 +18,22 @@ memory@0 {
+ 		device_type = "memory";
+ 		reg = <0x0 0x0 0x0 0x80000000>;
+ 	};
++
++	aml_bt: aml_bt {
++		compatible = "amlogic, aml-bt";
++		status = "disabled";
++	};
++
++	aml_wifi: aml_wifi {
++		compatible = "amlogic, aml-wifi";
++		status = "disabled";
++		irq_trigger_type = "GPIO_IRQ_LOW";
++		//dhd_static_buf; /* if use bcm wifi, config dhd_static_buf */
++		//pinctrl-0 = <&pwm_e_pins>;
++		//pinctrl-names = "default";
++		pwm_config = <&wifi32k>;
++	};
++
+ };
+ 
+ 
+@@ -25,3 +41,17 @@ memory@0 {
+ &sd_emmc_b {
+ 	broken-cd;/* cd-gpios = <&gpio_ao GPIOAO_3 GPIO_ACTIVE_LOW>;*/
+ };
++
++
++&aml_wifi{
++	status = "okay";
++	interrupt-gpios = <&gpio  GPIOX_6  GPIO_ACTIVE_HIGH>;
++	power_on-gpios = <&gpio   GPIOX_7  GPIO_ACTIVE_HIGH>;
++};
++&aml_bt {
++
++	status = "okay";
++	reset-gpios = <&gpio    GPIOZ_7 GPIO_ACTIVE_HIGH>;
++	btwakeup-gpios = <&gpio_ao GPIOAO_8 GPIO_ACTIVE_HIGH>;
++	hostwake-gpios = <&gpio GPIOZ_6 GPIO_ACTIVE_HIGH>;
++};
+-- 
+2.30.2
+

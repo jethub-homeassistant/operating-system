@@ -1,0 +1,3717 @@
+From eb2c08f7968f6b6c538d434a85215215756d9f19 Mon Sep 17 00:00:00 2001
+From: Vyacheslav Bocharov <adeep@lexina.in>
+Date: Thu, 1 Sep 2022 14:14:16 +0300
+Subject: [PATCH 4/4] Add amlogic minimal drivers
+
+---
+ drivers/Kconfig                               |    2 +
+ drivers/Makefile                              |    1 +
+ drivers/amlogic/Kconfig                       |  171 +++
+ drivers/amlogic/Makefile                      |   80 ++
+ drivers/amlogic/bluetooth/Kconfig             |    8 +
+ drivers/amlogic/bluetooth/Makefile            |    1 +
+ drivers/amlogic/bluetooth/bt_device.c         |  749 ++++++++++++
+ drivers/amlogic/wifi/Kconfig                  |   23 +
+ drivers/amlogic/wifi/Makefile                 |    4 +
+ drivers/amlogic/wifi/dhd_static_buf.c         |  610 ++++++++++
+ drivers/amlogic/wifi/wifi_dt.c                | 1031 +++++++++++++++++
+ include/dt-bindings/pwm/meson.h               |   30 +
+ include/linux/amlogic/aml_gpio_consumer.h     |   43 +
+ include/linux/amlogic/bt_device.h             |   26 +
+ include/linux/amlogic/cpu_version.h           |    5 +
+ include/linux/amlogic/dhd_buf.h               |    9 +
+ include/linux/amlogic/iomap.h                 |   78 ++
+ .../amlogic/media/registers/cpu_version.h     |  293 +++++
+ .../amlogic/media/registers/register_map.h    |  105 ++
+ include/linux/amlogic/pm.h                    |   79 ++
+ include/linux/amlogic/pwm-meson.h             |  152 +++
+ include/linux/amlogic/wifi_dt.h               |   27 +
+ 22 files changed, 3527 insertions(+)
+ create mode 100644 drivers/amlogic/Kconfig
+ create mode 100644 drivers/amlogic/Makefile
+ create mode 100644 drivers/amlogic/bluetooth/Kconfig
+ create mode 100644 drivers/amlogic/bluetooth/Makefile
+ create mode 100644 drivers/amlogic/bluetooth/bt_device.c
+ create mode 100644 drivers/amlogic/wifi/Kconfig
+ create mode 100644 drivers/amlogic/wifi/Makefile
+ create mode 100644 drivers/amlogic/wifi/dhd_static_buf.c
+ create mode 100644 drivers/amlogic/wifi/wifi_dt.c
+ create mode 100644 include/dt-bindings/pwm/meson.h
+ create mode 100644 include/linux/amlogic/aml_gpio_consumer.h
+ create mode 100644 include/linux/amlogic/bt_device.h
+ create mode 100644 include/linux/amlogic/cpu_version.h
+ create mode 100644 include/linux/amlogic/dhd_buf.h
+ create mode 100644 include/linux/amlogic/iomap.h
+ create mode 100644 include/linux/amlogic/media/registers/cpu_version.h
+ create mode 100644 include/linux/amlogic/media/registers/register_map.h
+ create mode 100644 include/linux/amlogic/pm.h
+ create mode 100644 include/linux/amlogic/pwm-meson.h
+ create mode 100644 include/linux/amlogic/wifi_dt.h
+
+diff --git a/drivers/Kconfig b/drivers/Kconfig
+index b6a172d32a7d..94ff3b200989 100644
+--- a/drivers/Kconfig
++++ b/drivers/Kconfig
+@@ -241,4 +241,6 @@ source "drivers/peci/Kconfig"
+ 
+ source "drivers/hte/Kconfig"
+ 
++source "drivers/amlogic/Kconfig"
++
+ endmenu
+diff --git a/drivers/Makefile b/drivers/Makefile
+index 9a30842b22c5..858a3172b38f 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -189,3 +189,4 @@ obj-$(CONFIG_COUNTER)		+= counter/
+ obj-$(CONFIG_MOST)		+= most/
+ obj-$(CONFIG_PECI)		+= peci/
+ obj-$(CONFIG_HTE)		+= hte/
++obj-$(CONFIG_AMLOGIC_MODIFY)	+= amlogic/
+diff --git a/drivers/amlogic/Kconfig b/drivers/amlogic/Kconfig
+new file mode 100644
+index 000000000000..0e19965265ef
+--- /dev/null
++++ b/drivers/amlogic/Kconfig
+@@ -0,0 +1,171 @@
++config AMLOGIC_GKI
++	bool "Amlogic GKI macro"
++	default n
++	help
++		This macro controls GKI module build behavior, if enabled
++		some internal code will be build as external module
++
++config AMLOGIC_MODIFY
++	bool "Amlogic modify for kernel code"
++	default y
++	help
++		This option is set up for AMLOGIC modify of standard
++		kernel source code. All modify of kernel standard code
++		should be wrapped by this config
++
++config AMLOGIC_ANDROIDP
++	bool "Amlogic modify kernel in project androidp"
++	default n
++	help
++		This option is set up for AMLOGIC modify of standard
++		kernel source code in project androidp.
++
++config AMLOGIC_REMOVE_OLD
++	bool "Amlogic remove old soc code for g12a previous"
++	default n
++	help
++		This option is set up for removing code for G12A
++		previous.All modify of not used code should be
++		wrapped by this config
++
++config AMLOGIC_ARMV8_AARCH64
++	bool "AARCH64 kernel support for Amlogic ARMv8 Soc"
++	depends on AMLOGIC_MODIFY || COMPILE_TEST
++	default y
++	help
++	  aarch32 and aarch64 kernels are supported for armv8 socs.
++	  enable this config to select 64 bit kernel.
++	  Select Y if doult.
++
++config AMLOGIC_DRIVER
++	bool "Amlogic Peripheral drivers"
++	depends on AMLOGIC_MODIFY
++	default y
++	help
++		this option is provided for control amlogic
++		drivers, if you want to use amlogic driver
++		please open it.
++		Note: All amlogic driver should be placed in
++		this directory
++
++config AMLOGIC_ALLYESCONFIG
++	bool "Amlogic compile config option"
++	default n
++	help
++		This option is set up for masking frame size
++		limit in drivers/Makefile file. When we compile
++		kernel with --allyesconfig, we not limit the
++		frame size.
++
++config AMLOGIC_MEDIA_V4L_DEC
++	bool "enable amlogic v4l decode module."
++	default n
++	help
++		Support v4L protocol based decoding components.
++		Decoding is done by AmLogic hardware, and if you
++		need to support this feature, you need to enable
++		this configuration item.
++
++
++#
++# Amlogic DVB configuration
++#
++
++menu "Amlogic dvb configuration"
++
++config AMLOGIC_DVB
++	tristate "Amlogic dvb support"
++	depends on DVB_CORE && AMLOGIC_DVB_COMPAT
++	default n
++	help
++		This option is used only to control the
++		compilation of dvb related driver code, for
++		example hw_demux, it is enabled by default,
++		When it is turned on,it will automatically
++		select DVB_CORE and AMLOGIC_DVB_COMPAT.
++
++config AMLOGIC_DVB_COMPAT
++	tristate "Compat amlogic dvb"
++	depends on DVB_CORE
++	default n
++	help
++		This option is used only to compatible with
++		amlogic dvb related code, for example dvb-core,
++		it is enabled by default,depending on
++		AMLOGIC_DVB and DVB_CORE.
++
++config AMLOGIC_MFD
++	tristate "Compat amlogic mfd"
++	default n
++	help
++		This option is used only to compatible with
++		amlogic dvb related code,it is enabled by
++		default,depending on
++		AMLOGIC_MFD.
++
++config AMLOGIC_REGULATOR
++	tristate "Compat amlogic mfd"
++	default n
++	help
++		This option is used only to compatible with
++		amlogic mfd related code,it is enabled
++		by default,depending on
++		AMLOGIC_REGULATOR.
++
++endmenu
++
++if AMLOGIC_DRIVER
++menu "Amlogic Device Drivers"
++# Please add folders in alphabetical order
++
++#source "drivers/amlogic/algorithm/Kconfig"
++#source "drivers/amlogic/cpufreq/Kconfig"
++#source "drivers/amlogic/efuse_unifykey/Kconfig"
++#source "drivers/amlogic/ddr_tool/Kconfig"
++#source "drivers/amlogic/crypto/Kconfig"
++#source "drivers/amlogic/secmon/Kconfig"
++#source "drivers/amlogic/mailbox/Kconfig"
++#source "drivers/amlogic/reg_access/Kconfig"
++#source "drivers/amlogic/media/Kconfig"
++#source "drivers/amlogic/pci/Kconfig"
++#source "drivers/amlogic/thermal/Kconfig"
++#source "drivers/amlogic/clk_debug/Kconfig"
++#source "drivers/amlogic/input/Kconfig"
++#source "drivers/amlogic/tee/Kconfig"
++#source "drivers/amlogic/jtag/Kconfig"
++#source "drivers/amlogic/reboot/Kconfig"
++#source "drivers/amlogic/gki_tool/Kconfig"
++#source "drivers/amlogic/hifi4dsp/Kconfig"
++#source "drivers/amlogic/dvb/Kconfig"
++#source "drivers/amlogic/drm/Kconfig"
++#source "drivers/amlogic/irblaster/Kconfig"
++
++#source "drivers/amlogic/cpuidle/Kconfig"
++#source "drivers/amlogic/defendkey/Kconfig"
++#source "drivers/amlogic/free_reserved/Kconfig"
++#source "drivers/amlogic/usb/Kconfig"
++#source "drivers/amlogic/pm/Kconfig"
++#source "drivers/amlogic/power/Kconfig"
++#source "drivers/amlogic/debug/Kconfig"
++#source "drivers/amlogic/memory_ext/Kconfig"
++source "drivers/amlogic/bluetooth/Kconfig"
++source "drivers/amlogic/wifi/Kconfig"
++#source "drivers/amlogic/uart/Kconfig"
++#source "drivers/amlogic/smartcard_sc2/Kconfig"
++#source "drivers/amlogic/mtd/Kconfig"
++#source "drivers/amlogic/led/Kconfig"
++#source "drivers/amlogic/amaudio/Kconfig"
++#source "drivers/amlogic/audiodsp/Kconfig"
++#source "drivers/amlogic/audioinfo/Kconfig"
++#source "drivers/amlogic/dolby_fw/Kconfig"
++#source "drivers/amlogic/cpu_info/Kconfig"
++#source "drivers/amlogic/ethernet/phy/Kconfig"
++#source "drivers/amlogic/soc_info/Kconfig"
++#source "drivers/amlogic/gator-driver/Kconfig"
++#source "drivers/amlogic/global_timer/Kconfig"
++#source "drivers/amlogic/mfd/Kconfig"
++#source "drivers/amlogic/regulator/Kconfig"
++#source "drivers/amlogic/mfh/Kconfig"
++
++endmenu
++endif
+diff --git a/drivers/amlogic/Makefile b/drivers/amlogic/Makefile
+new file mode 100644
+index 000000000000..4c3593a25a3c
+--- /dev/null
++++ b/drivers/amlogic/Makefile
+@@ -0,0 +1,80 @@
++
++##########################################
++########## Amlogic Drivers ###############
++##########################################
++
++
++# GKI extern modules if enabled AMLOGIC_GKI
++#obj-$(CONFIG_AMLOGIC_MESON_CPUFREQ)	+= cpufreq/
++#obj-$(CONFIG_AMLOGIC_SEC)               += secmon/
++#obj-$(CONFIG_AMLOGIC_EFUSE_UNIFYKEY)    += efuse_unifykey/
++#obj-$(CONFIG_AMLOGIC_DDR_TOOL)		+= ddr_tool/
++#obj-$(CONFIG_AMLOGIC_CRYPTO_DMA)	+= crypto/
++#obj-$(CONFIG_AMLOGIC_MHU_MBOX)		+= mailbox/
++#obj-$(CONFIG_AMLOGIC_REG_ACCESS)	+= reg_access/
++#obj-$(CONFIG_AMLOGIC_MEDIA_ENABLE)	+= media/
++#obj-$(CONFIG_AMLOGIC_PCIE)		+= pci/
++#obj-$(CONFIG_AMLOGIC_THERMAL)		+= thermal/
++#obj-$(CONFIG_AMLOGIC_CLK_DEBUG)		+= clk_debug/
++#obj-$(CONFIG_AMLOGIC_INPUT)		+= input/
++#obj-$(CONFIG_AMLOGIC_TEE)		+= tee/
++#obj-$(CONFIG_AMLOGIC_JTAG_MESON)	+= jtag/
++#obj-$(CONFIG_AMLOGIC_GX_REBOOT)		+= reboot/
++#obj-$(CONFIG_AMLOGIC_GKI_TOOL)		+= gki_tool/
++#obj-$(CONFIG_AMLOGIC_HIFI4DSP)          += hifi4dsp/
++#obj-$(CONFIG_AMLOGIC_DVB_COMPAT)        += dvb/
++#obj-$(CONFIG_AMLOGIC_DRM)		+= drm/
++#obj-$(CONFIG_AMLOGIC_IRBLASTER)		+= irblaster/
++#obj-$(CONFIG_MTD_NAND_MESON)		+= mtd/nand/
++#obj-$(CONFIG_MTD_RESV_MESON)		+= mtd/reserve/
++#obj-$(CONFIG_MTD_SPI_NAND_MESON)	+= mtd/spi_nand/
++#obj-$(CONFIG_AMLOGIC_AUDIO_DSP)  	+= audiodsp/
++#obj-$(CONFIG_AMLOGIC_AMAUDIO)		+= amaudio/
++#obj-$(CONFIG_AMLOGIC_AUDIO_INFO) 	+= audioinfo/
++#obj-$(CONFIG_AMLOGIC_ETH_PRIVE)		+= ethernet/phy/
++#obj-$(CONFIG_AMLOGIC_MEDIA_ALGORITHM)	+= algorithm/
++#obj-$(CONFIG_AMLOGIC_GLOBAL_TIMER)	+= global_timer/
++
++#Always build in code/modules
++#obj-$(CONFIG_AMLOGIC_CPUIDLE)		+= cpuidle/
++#obj-$(CONFIG_AMLOGIC_DEFENDKEY)		+= defendkey/
++#obj-$(CONFIG_AMLOGIC_AUTO_CAPTURE)	+= free_reserved/
++#obj-$(CONFIG_AMLOGIC_GX_SUSPEND)	+= pm/
++#obj-$(CONFIG_AMLOGIC_POWER)		+= power/
++#obj-$(CONFIG_AMLOGIC_DEBUG)		+= debug/
++#obj-$(CONFIG_PWM_MESON)			+= pwm/
++#obj-$(CONFIG_AMLOGIC_LED)    		+= led/
++#obj-$(CONFIG_AMLOGIC_MEMORY_EXTEND)	+= memory_ext/
++obj-$(CONFIG_AMLOGIC_WIFI)		+= wifi/
++#obj-$(CONFIG_AMLOGIC_UART)		+= uart/
++obj-$(CONFIG_AMLOGIC_BT_DEVICE)		+= bluetooth/
++#obj-$(CONFIG_AMLOGIC_SMARTCARD)		+= smartcard/
++#obj-$(CONFIG_AMLOGIC_SMARTCARD)		+= smartcard_sc2/
++#obj-$(CONFIG_MMC_MESON_GX)		+= mmc/
++#obj-$(CONFIG_AMLOGIC_USB)               += usb/
++#obj-$(CONFIG_AMLOGIC_DVB_DMX)		+= dvb/
++#obj-$(CONFIG_DOLBY_FW) += dolby_fw/
++#obj-$(CONFIG_AMLOGIC_CPU_INFO)          += cpu_info/
++#obj-$(CONFIG_AMLOGIC_SOC_INFO) 		+= soc_info/
++#obj-$(CONFIG_GATOR)	+= gator-driver/
++#obj-$(CONFIG_AMLOGIC_MFD) += mfd/
++#obj-$(CONFIG_AMLOGIC_REGULATOR) += regulator/
++#obj-$(CONFIG_AMLOGIC_MFH_MODULE)     += mfh/
++
++KBUILD_CFLAGS_MODULE += $(GKI_EXT_MODULE_PREDEFINE)
++
++all:
++	@$(MAKE) -C $(KERNEL_SRC) M=$(M)  modules $(GKI_EXT_MODULE_CONFIG)
++
++modules_install:
++	@echo "$(MAKE) INSTALL_MOD_STRIP=1 M=$(M) -C $(KERNEL_SRC) modules_install"
++#	@$(MAKE) INSTALL_MOD_STRIP=1 M=$(M) -C $(KERNEL_SRC) modules_install
++#	mkdir -p ${OUT_DIR}/../vendor_lib/modules
++#	cd ${OUT_DIR}/$(M)/; find -name "*.ko" -exec cp {} ${OUT_DIR}/../vendor_lib/modules/ \;
++	mkdir -p ${OUT_DIR}/../vendor_lib/modules
++	(cd ${OUT_DIR}/$(M)/; find -name "dvb_demux.ko" -exec cp {} ${OUT_DIR}/../vendor_lib/modules/ \;)
++	(cd ${OUT_DIR}/$(M)/; find -name "aml_aucpu.ko" -exec cp {} ${OUT_DIR}/../vendor_lib/modules/ \;)
++
++clean:
++	$(MAKE) -C $(KERNEL_SRC) M=$(M) clean
++
+diff --git a/drivers/amlogic/bluetooth/Kconfig b/drivers/amlogic/bluetooth/Kconfig
+new file mode 100644
+index 000000000000..d3228a7caace
+--- /dev/null
++++ b/drivers/amlogic/bluetooth/Kconfig
+@@ -0,0 +1,8 @@
++# Amlogic Bluetooth
++
++config AMLOGIC_BT_DEVICE
++    bool "BT Device support"
++    depends on BT && RFKILL
++    default y
++    help
++      Say Y here if you want to use the BT device.
+diff --git a/drivers/amlogic/bluetooth/Makefile b/drivers/amlogic/bluetooth/Makefile
+new file mode 100644
+index 000000000000..3478e7af4fa0
+--- /dev/null
++++ b/drivers/amlogic/bluetooth/Makefile
+@@ -0,0 +1 @@
++obj-$(CONFIG_AMLOGIC_BT_DEVICE) += bt_device.o
+diff --git a/drivers/amlogic/bluetooth/bt_device.c b/drivers/amlogic/bluetooth/bt_device.c
+new file mode 100644
+index 000000000000..9eba5c825354
+--- /dev/null
++++ b/drivers/amlogic/bluetooth/bt_device.c
+@@ -0,0 +1,749 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * drivers/amlogic/bluetooth/bt_device.c
++ *
++ * Copyright (C) 2017 Amlogic, Inc. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ * more details.
++ *
++ */
++
++#include <linux/module.h>
++#include <linux/platform_device.h>
++#include <linux/delay.h>
++#include <linux/string.h>
++#include <linux/ctype.h>
++#include <linux/leds.h>
++#include <linux/gpio.h>
++#include <linux/rfkill.h>
++#include <linux/slab.h>
++#include <linux/of.h>
++#include <linux/pinctrl/consumer.h>
++#include <linux/amlogic/aml_gpio_consumer.h>
++#include <linux/of_gpio.h>
++#include <linux/amlogic/cpu_version.h>
++#include <linux/amlogic/iomap.h>
++#include <linux/io.h>
++#include <linux/amlogic/bt_device.h>
++#include <linux/amlogic/pm.h>
++#include <linux/amlogic/wifi_dt.h>
++#include <linux/random.h>
++#ifdef CONFIG_AM_WIFI_SD_MMC
++#include <linux/amlogic/wifi_dt.h>
++#endif
++#include "../../gpio/gpiolib.h"
++
++#include <linux/interrupt.h>
++#include <linux/pm_wakeup.h>
++#include <linux/pm_wakeirq.h>
++#include <linux/irq.h>
++
++#include <linux/input.h>
++
++#if defined(CONFIG_AMLOGIC_LEGACY_EARLY_SUSPEND) && defined(CONFIG_AMLOGIC_GX_SUSPEND)
++#include <linux/amlogic/pm.h>
++static struct early_suspend bt_early_suspend;
++#endif
++
++#define BT_RFKILL "bt_rfkill"
++#define MODULE_ID 0x271
++#define POWER_EVENT_DEF     0
++#define POWER_EVENT_RESET   1
++#define POWER_EVENT_EN      2
++
++char bt_addr[18] = "";
++char *btmac;
++core_param(btmac, btmac, charp, 0644);
++static struct class *bt_addr_class;
++static int btwake_evt;
++static int btirq_flag;
++static int btpower_evt;
++static int flag_n;
++static int flag_p;
++static int cnt;
++static int rfk_reg = 1;
++
++static int distinguish_module(void)
++{
++	// !!!!!FIXME int vendor_id = 0;
++
++	//vendor_id = sdio_get_vendor();
++
++	//if (vendor_id == MODULE_ID)
++		return 0;
++
++	//return 1;
++}
++
++static ssize_t value_show(struct class *cls,
++	struct class_attribute *attr, char *_buf)
++{
++	char local_addr[6];
++
++	if (!_buf)
++		return -EINVAL;
++
++	if (strlen(bt_addr) == 0) {
++		local_addr[0] = 0x22;
++		local_addr[1] = 0x22;
++		local_addr[2] = prandom_u32();
++		local_addr[3] = prandom_u32();
++		local_addr[4] = prandom_u32();
++		local_addr[5] = prandom_u32();
++		sprintf(bt_addr, "%02x:%02x:%02x:%02x:%02x:%02x",
++		local_addr[0], local_addr[1], local_addr[2],
++		local_addr[3], local_addr[4], local_addr[5]);
++	}
++
++	return sprintf(_buf, "%s\n", bt_addr);
++}
++
++static ssize_t value_store(struct class *cls,
++			   struct class_attribute *attr,
++			   const char __user *buf, size_t count)
++{
++	int ret = -EINVAL;
++
++	if (!buf)
++		return ret;
++
++	snprintf(bt_addr, sizeof(bt_addr), "%s", buf);
++
++	if (bt_addr[strlen(bt_addr) - 1] == '\n')
++		bt_addr[strlen(bt_addr) - 1] = '\0';
++
++	pr_info("bt_addr=%s\n", bt_addr);
++	return count;
++}
++static CLASS_ATTR_RW(value);
++
++struct bt_dev_runtime_data {
++	struct rfkill *bt_rfk;
++	struct bt_dev_data *pdata;
++};
++
++static void off_def_power(struct bt_dev_data *pdata, unsigned long down_time)
++{
++	if (pdata->gpio_reset > 0) {
++		if (pdata->power_on_pin_OD &&
++			pdata->power_low_level) {
++			gpio_direction_input(pdata->gpio_reset);
++		} else {
++			gpio_direction_output(pdata->gpio_reset,
++				pdata->power_low_level);
++		}
++
++		if (down_time)
++			msleep(down_time);
++	}
++
++	if (pdata->gpio_en > 0) {
++		if (pdata->power_on_pin_OD &&
++			pdata->power_low_level) {
++			gpio_direction_input(pdata->gpio_en);
++		} else {
++			set_usb_bt_power(0);
++		}
++	}
++}
++
++static void on_def_power(struct bt_dev_data *pdata, unsigned long up_time)
++{
++	if (pdata->gpio_reset > 0) {
++		if (pdata->power_on_pin_OD &&
++			!pdata->power_low_level) {
++			gpio_direction_input(pdata->gpio_reset);
++		} else {
++			gpio_direction_output(pdata->gpio_reset,
++				!pdata->power_low_level);
++		}
++
++		if (up_time)
++			msleep(up_time);
++	}
++
++	if (pdata->gpio_en > 0) {
++		if (pdata->power_on_pin_OD &&
++			!pdata->power_low_level) {
++			gpio_direction_input(pdata->gpio_en);
++		} else {
++			set_usb_bt_power(1);
++		}
++	}
++}
++
++static void off_reset_power(struct bt_dev_data *pdata, unsigned long down_time)
++{
++	if (pdata->gpio_reset > 0) {
++		if (pdata->power_on_pin_OD &&
++			pdata->power_low_level) {
++			gpio_direction_input(pdata->gpio_reset);
++		} else {
++			gpio_direction_output(pdata->gpio_reset,
++				pdata->power_low_level);
++		}
++
++		if (down_time)
++			msleep(down_time);
++	}
++}
++
++static void on_reset_power(struct bt_dev_data *pdata, unsigned long up_time)
++{
++	if (pdata->gpio_reset > 0) {
++		if (pdata->power_on_pin_OD &&
++			!pdata->power_low_level) {
++			gpio_direction_input(pdata->gpio_reset);
++		} else {
++			gpio_direction_output(pdata->gpio_reset,
++				!pdata->power_low_level);
++		}
++
++		if (up_time)
++			msleep(up_time);
++	}
++}
++
++static void bt_device_off(struct bt_dev_data *pdata)
++{
++	if (!distinguish_module())
++		return;
++
++	if (pdata->power_down_disable == 0) {
++		switch (btpower_evt) {
++		case POWER_EVENT_DEF:
++			off_def_power(pdata, 0);
++			break;
++		case POWER_EVENT_RESET:
++			off_reset_power(pdata, 0);
++			break;
++		case POWER_EVENT_EN:
++			set_usb_bt_power(0);
++			break;
++		default:
++			pr_err("%s default no electricity", __func__);
++			break;
++		}
++		msleep(20);
++	}
++}
++
++static void bt_device_init(struct bt_dev_data *pdata)
++{
++	int tmp = 0;
++	btpower_evt = 0;
++	btirq_flag = 0;
++
++	if (pdata->gpio_reset > 0)
++		gpio_request(pdata->gpio_reset, BT_RFKILL);
++
++	if (pdata->gpio_en > 0)
++		gpio_request(pdata->gpio_en, BT_RFKILL);
++
++	if (pdata->gpio_hostwake > 0) {
++		gpio_request(pdata->gpio_hostwake, BT_RFKILL);
++		gpio_direction_output(pdata->gpio_hostwake, 1);
++	}
++
++	if (pdata->gpio_btwakeup > 0) {
++		gpio_request(pdata->gpio_btwakeup, BT_RFKILL);
++		gpio_direction_input(pdata->gpio_btwakeup);
++	}
++
++	tmp = pdata->power_down_disable;
++	pdata->power_down_disable = 0;
++	bt_device_off(pdata);
++	pdata->power_down_disable = tmp;
++}
++
++static void bt_device_deinit(struct bt_dev_data *pdata)
++{
++	if (pdata->gpio_reset > 0)
++		gpio_free(pdata->gpio_reset);
++
++	if (pdata->gpio_en > 0)
++		gpio_free(pdata->gpio_en);
++
++	btpower_evt = 0;
++	if (pdata->gpio_hostwake > 0)
++		gpio_free(pdata->gpio_hostwake);
++}
++
++static void bt_device_on(struct bt_dev_data *pdata, unsigned long down_time, unsigned long up_time)
++{
++	if (pdata->power_down_disable == 0) {
++		switch (btpower_evt) {
++		case POWER_EVENT_DEF:
++			off_def_power(pdata, down_time);
++			on_def_power(pdata, up_time);
++			break;
++		case POWER_EVENT_RESET:
++			off_reset_power(pdata, down_time);
++			on_reset_power(pdata, up_time);
++			break;
++		case POWER_EVENT_EN:
++			set_usb_bt_power(0);
++			set_usb_bt_power(1);
++			break;
++		default:
++			pr_err("%s default no electricity", __func__);
++			break;
++		}
++	}
++}
++
++/*The system calls this function when GPIOC_14 interrupt occurs*/
++static irqreturn_t bt_interrupt(int irq, void *dev_id)
++{
++	struct bt_dev_data *pdata = (struct bt_dev_data *)dev_id;
++
++	if (btirq_flag == 1) {
++		schedule_work(&pdata->btwakeup_work);
++		pr_info("freeze: test BT IRQ\n");
++	}
++
++	return IRQ_HANDLED;
++}
++
++static enum hrtimer_restart btwakeup_timer_handler(struct hrtimer *timer)
++{
++	struct bt_dev_data *pdata  = container_of(timer,
++			struct bt_dev_data, timer);
++
++	if  (!gpio_get_value(pdata->gpio_btwakeup) && cnt  < 5)
++		cnt++;
++	if (cnt >= 5 && cnt < 15) {
++		if (gpio_get_value(pdata->gpio_btwakeup))
++			flag_p++;
++		else if (!gpio_get_value(pdata->gpio_btwakeup))
++			flag_n++;
++		cnt++;
++	}
++	pr_info("%s power: %d,netflix:%d\n", __func__, flag_p, flag_n);
++	if (flag_p >= 7) {
++		pr_info("%s power: %d\n", __func__, flag_p);
++		btwake_evt = 2;
++		cnt = 0;
++		flag_p = 0;
++		btirq_flag = 0;
++		input_event(pdata->input_dev,
++			EV_KEY, KEY_POWER, 1);
++		input_sync(pdata->input_dev);
++		input_event(pdata->input_dev,
++			EV_KEY, KEY_POWER, 0);
++		input_sync(pdata->input_dev);
++	} else if (flag_n >= 7) {
++		pr_info("%s netflix: %d\n", __func__, flag_n);
++		btwake_evt = 2;
++		cnt = 0;
++		flag_n = 0;
++		btirq_flag = 0;
++		input_event(pdata->input_dev, EV_KEY, 133, 1);
++		input_sync(pdata->input_dev);
++		input_event(pdata->input_dev, EV_KEY, 133, 0);
++		input_sync(pdata->input_dev);
++	}
++	if (btwake_evt != 2 && cnt != 0)
++		hrtimer_start(&pdata->timer,
++			ktime_set(0, 20 * 1000000), HRTIMER_MODE_REL);
++	return HRTIMER_NORESTART;
++}
++
++static void get_btwakeup_irq_work(struct work_struct *work)
++{
++	struct bt_dev_data *pdata  = container_of(work,
++		struct bt_dev_data, btwakeup_work);
++
++	if (btwake_evt == 2)
++		return;
++	pr_info("%s", __func__);
++	hrtimer_start(&pdata->timer,
++			ktime_set(0, 100 * 1000000), HRTIMER_MODE_REL);
++}
++
++static int bt_set_block(void *data, bool blocked)
++{
++	struct bt_dev_data *pdata = data;
++
++	if (rfk_reg) {
++		pr_info("first rfkill_register skip\n");
++		rfk_reg = 0;
++		return 0;
++	}
++
++	pr_info("BT_RADIO going: %s\n", blocked ? "off" : "on");
++
++	if (!blocked) {
++		pr_info("AML_BT: going ON,btpower_evt=%d\n", btpower_evt);
++		bt_device_on(pdata, 200, 200);
++	} else {
++		pr_info("AML_BT: going OFF,btpower_evt=%d\n", btpower_evt);
++		bt_device_off(pdata);
++	}
++	return 0;
++}
++
++static const struct rfkill_ops bt_rfkill_ops = {
++	.set_block = bt_set_block,
++};
++
++#if defined(CONFIG_AMLOGIC_LEGACY_EARLY_SUSPEND) && defined(CONFIG_AMLOGIC_GX_SUSPEND)
++static void bt_earlysuspend(struct early_suspend *h)
++{
++}
++
++static void bt_lateresume(struct early_suspend *h)
++{
++}
++#endif
++
++static int bt_suspend(struct platform_device *pdev,
++		      pm_message_t state)
++{
++	struct bt_dev_runtime_data *prdata = platform_get_drvdata(pdev);
++	btwake_evt = 0;
++	pr_info("bt suspend\n");
++	disable_irq(prdata->pdata->irqno_wakeup);
++
++	return 0;
++}
++
++static int bt_resume(struct platform_device *pdev)
++{
++	struct bt_dev_runtime_data *prdata = platform_get_drvdata(pdev);
++	pr_info("bt resume\n");
++	enable_irq(prdata->pdata->irqno_wakeup);
++	btwake_evt = 0;
++/* !!!!!!FIXME
++	if ((get_resume_method() == RTC_WAKEUP) ||
++		(get_resume_method() == AUTO_WAKEUP)) {
++		btwake_evt = 1;
++		btirq_flag = 1;
++	    flag_n = 0;
++		flag_p = 0;
++		cnt = 0;
++	}
++	if (distinguish_module() && get_resume_method() == BT_WAKEUP) {
++		input_event(prdata->pdata->input_dev,
++			EV_KEY, KEY_POWER, 1);
++		input_sync(prdata->pdata->input_dev);
++		input_event(prdata->pdata->input_dev,
++			EV_KEY, KEY_POWER, 0);
++		input_sync(prdata->pdata->input_dev);
++	}
++*/
++	return 0;
++}
++
++static int bt_probe(struct platform_device *pdev)
++{
++	int ret = 0;
++	const void *prop;
++	struct rfkill *bt_rfk;
++	struct bt_dev_data *pdata = NULL;
++	struct bt_dev_runtime_data *prdata;
++	struct input_dev *input_dev;
++
++#ifdef CONFIG_OF
++	if (pdev && pdev->dev.of_node) {
++		const char *str;
++		//struct gpio_desc *desc;
++
++		pr_debug("enter %s of_node\n", __func__);
++		pdata = kzalloc(sizeof(*pdata), GFP_KERNEL);
++		if (!pdata) {
++			ret = -ENOMEM;
++			goto err_res;
++		}
++
++		ret = of_property_read_string(pdev->dev.of_node,
++					      "reset-gpios", &str);
++		if (ret) {
++			pr_warn("not get gpio_reset\n");
++			pdata->gpio_reset = 0;
++		} else {
++			pdata->gpio_reset = of_get_named_gpio_flags
++							(pdev->dev.of_node,
++							"reset-gpios", 0, NULL);
++		}
++
++		ret = of_property_read_string(pdev->dev.of_node,
++					      "bt_en-gpios", &str);
++		if (ret) {
++			pr_warn("not get gpio_en\n");
++			pdata->gpio_en = 0;
++		} else {
++			pdata->gpio_en = of_get_named_gpio_flags
++							(pdev->dev.of_node,
++							"bt_en-gpios", 0, NULL);
++		}
++		ret = of_property_read_string(pdev->dev.of_node,
++					      "hostwake-gpios", &str);
++		if (ret) {
++			pr_warn("not get gpio_hostwake\n");
++			pdata->gpio_hostwake = 0;
++		} else {
++			pdata->gpio_hostwake = of_get_named_gpio_flags
++							(pdev->dev.of_node,
++							"hostwake-gpios",
++							0, NULL);
++		}
++		/*gpio_btwakeup = BT_WAKE_HOST*/
++		ret = of_property_read_string(pdev->dev.of_node,
++			"btwakeup-gpios", &str);
++		if (ret) {
++			pr_warn("not get btwakeup-gpios\n");
++			pdata->gpio_btwakeup = 0;
++		} else {
++			pdata->gpio_btwakeup = of_get_named_gpio_flags
++							(pdev->dev.of_node,
++							"btwakeup-gpios",
++							0, NULL);
++		}
++
++		prop = of_get_property(pdev->dev.of_node,
++				       "power_low_level", NULL);
++		if (prop) {
++			pr_debug("power on valid level is low");
++			pdata->power_low_level = 1;
++		} else {
++			pr_debug("power on valid level is high");
++			pdata->power_low_level = 0;
++			pdata->power_on_pin_OD = 0;
++		}
++		ret = of_property_read_u32(pdev->dev.of_node,
++					   "power_on_pin_OD",
++					   &pdata->power_on_pin_OD);
++		if (ret)
++			pdata->power_on_pin_OD = 0;
++		pr_debug("bt: power_on_pin_OD = %d;\n", pdata->power_on_pin_OD);
++		ret = of_property_read_u32(pdev->dev.of_node,
++					   "power_off_flag",
++					   &pdata->power_off_flag);
++		if (ret)
++			pdata->power_off_flag = 1;/*bt poweroff*/
++		pr_debug("bt: power_off_flag = %d;\n", pdata->power_off_flag);
++
++		ret = of_property_read_u32(pdev->dev.of_node,
++					   "power_down_disable",
++					   &pdata->power_down_disable);
++		if (ret)
++			pdata->power_down_disable = 0;
++		pr_debug("dis power down = %d;\n", pdata->power_down_disable);
++	} else if (pdev) {
++		pdata = (struct bt_dev_data *)(pdev->dev.platform_data);
++	} else {
++		ret = -ENOENT;
++		goto err_res;
++	}
++#else
++	pdata = (struct bt_dev_data *)(pdev->dev.platform_data);
++#endif
++	bt_addr_class = class_create(THIS_MODULE, "bt_addr");
++	ret = class_create_file(bt_addr_class, &class_attr_value);
++
++	bt_device_init(pdata);
++
++	if (pdata->power_down_disable == 1) {
++		pdata->power_down_disable = 0;
++		bt_device_on(pdata, 100, 0);
++		pdata->power_down_disable = 1;
++	}
++
++	/* default to bluetooth off */
++	/* rfkill_switch_all(RFKILL_TYPE_BLUETOOTH, 1); */
++	/* bt_device_off(pdata); */
++
++	bt_rfk = rfkill_alloc("bt-dev", &pdev->dev,
++			      RFKILL_TYPE_BLUETOOTH,
++			      &bt_rfkill_ops, pdata);
++
++	if (!bt_rfk) {
++		pr_info("rfk alloc fail\n");
++		ret = -ENOMEM;
++		goto err_rfk_alloc;
++	}
++
++	rfkill_init_sw_state(bt_rfk, true);
++	ret = rfkill_register(bt_rfk);
++	if (ret) {
++		pr_err("rfkill_register fail\n");
++		goto err_rfkill;
++	}
++	prdata = kmalloc(sizeof(*prdata), GFP_KERNEL);
++
++	if (!prdata)
++		goto err_rfkill;
++
++	prdata->bt_rfk = bt_rfk;
++	prdata->pdata = pdata;
++	platform_set_drvdata(pdev, prdata);
++#if defined(CONFIG_AMLOGIC_LEGACY_EARLY_SUSPEND) && defined(CONFIG_AMLOGIC_GX_SUSPEND)
++	bt_early_suspend.level =
++		EARLY_SUSPEND_LEVEL_DISABLE_FB;
++	bt_early_suspend.suspend = bt_earlysuspend;
++	bt_early_suspend.resume = bt_lateresume;
++	bt_early_suspend.param = pdev;
++	register_early_suspend(&bt_early_suspend);
++#endif
++
++	/*1.Set BT_WAKE_HOST to the input state;*/
++	/*2.Get interrupt number(irqno_wakeup).*/
++	pdata->irqno_wakeup = gpio_to_irq(pdata->gpio_btwakeup);
++
++	/*Register interrupt service function*/
++	ret = request_irq(pdata->irqno_wakeup, bt_interrupt,
++			IRQF_TRIGGER_FALLING, "bt-irq", (void *)pdata);
++	if (ret < 0)
++		pr_err("request_irq error ret=%d\n", ret);
++
++	//disable_irq(pdata->irqno_wakeup);
++
++	ret = device_init_wakeup(&pdev->dev, 1);
++	if (ret)
++		pr_err("device_init_wakeup failed: %d\n", ret);
++	/*Wake up the interrupt*/
++	ret = dev_pm_set_wake_irq(&pdev->dev, pdata->irqno_wakeup);
++	if (ret)
++		pr_err("dev_pm_set_wake_irq failed: %d\n", ret);
++
++	INIT_WORK(&pdata->btwakeup_work, get_btwakeup_irq_work);
++
++	//input
++	input_dev = input_allocate_device();
++	if (!input_dev) {
++		pr_err("[abner test]input_allocate_device failed: %d\n", ret);
++		return -EINVAL;
++	}
++	set_bit(EV_KEY,  input_dev->evbit);
++	set_bit(KEY_POWER, input_dev->keybit);
++	set_bit(133, input_dev->keybit);
++
++	input_dev->name = "input_btrcu";
++	input_dev->phys = "input_btrcu/input0";
++	input_dev->dev.parent = &pdev->dev;
++	input_dev->id.bustype = BUS_ISA;
++	input_dev->id.vendor = 0x0001;
++	input_dev->id.product = 0x0001;
++	input_dev->id.version = 0x0100;
++	input_dev->rep[REP_DELAY] = 0xffffffff;
++	input_dev->rep[REP_PERIOD] = 0xffffffff;
++	input_dev->keycodesize = sizeof(unsigned short);
++	input_dev->keycodemax = 0x1ff;
++	ret = input_register_device(input_dev);
++	if (ret < 0) {
++		pr_err("[abner test]input_register_device failed: %d\n", ret);
++		input_free_device(input_dev);
++		return -EINVAL;
++	}
++	pdata->input_dev = input_dev;
++
++	hrtimer_init(&pdata->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
++	pdata->timer.function = btwakeup_timer_handler;
++
++	return 0;
++
++err_rfkill:
++	rfkill_destroy(bt_rfk);
++err_rfk_alloc:
++	bt_device_deinit(pdata);
++err_res:
++	return ret;
++}
++
++static int bt_remove(struct platform_device *pdev)
++{
++	struct bt_dev_runtime_data *prdata =
++		platform_get_drvdata(pdev);
++	struct rfkill *rfk = NULL;
++	struct bt_dev_data *pdata = NULL;
++
++	platform_set_drvdata(pdev, NULL);
++
++	if (prdata) {
++		rfk = prdata->bt_rfk;
++		pdata = prdata->pdata;
++	}
++
++	if (pdata) {
++		bt_device_deinit(pdata);
++		kfree(pdata);
++	}
++
++	if (rfk) {
++		(rfk);
++		rfkill_destroy(rfk);
++	}
++	rfk = NULL;
++
++	return 0;
++}
++
++#ifdef CONFIG_OF
++static const struct of_device_id bt_dev_dt_match[] = {
++	{	.compatible = "amlogic, aml-bt",
++	},
++	{},
++};
++#else
++#define bt_dev_dt_match NULL
++#endif
++
++static struct platform_driver bt_driver = {
++	.driver		= {
++		.name	= "aml_bt",
++		.of_match_table = bt_dev_dt_match,
++	},
++	.probe		= bt_probe,
++	.remove		= bt_remove,
++	.suspend	= bt_suspend,
++	.resume		= bt_resume,
++};
++
++static int __init bt_init(void)
++{
++	pr_info("amlogic rfkill init\n");
++
++	return platform_driver_register(&bt_driver);
++}
++
++static void __exit bt_exit(void)
++{
++	platform_driver_unregister(&bt_driver);
++}
++
++module_param(btpower_evt, int, 0664);
++MODULE_PARM_DESC(btpower_evt, "btpower_evt");
++
++module_param(btwake_evt, int, 0664);
++MODULE_PARM_DESC(btwake_evt, "btwake_evt");
++module_init(bt_init);
++module_exit(bt_exit);
++MODULE_DESCRIPTION("bt rfkill");
++MODULE_AUTHOR("");
++MODULE_LICENSE("GPL");
++
++/**************** bt mac *****************/
++
++static int __init mac_addr_set(char *line)
++{
++	if (line) {
++		pr_info("try to read bt mac from emmc key!\n");
++		strncpy(bt_addr, line, sizeof(bt_addr) - 1);
++		bt_addr[sizeof(bt_addr) - 1] = '\0';
++		btmac = (char *)bt_addr;
++	}
++
++	return 1;
++}
++
++__setup("mac_bt=", mac_addr_set);
++
+diff --git a/drivers/amlogic/wifi/Kconfig b/drivers/amlogic/wifi/Kconfig
+new file mode 100644
+index 000000000000..7cb70da8913f
+--- /dev/null
++++ b/drivers/amlogic/wifi/Kconfig
+@@ -0,0 +1,23 @@
++menuconfig AMLOGIC_WIFI
++	tristate "WiFi support"
++	select WIRELESS_EXT
++	select WEXT_PRIV
++	default y
++	help
++		select y to support wifi
++
++if AMLOGIC_WIFI
++
++config AMLOGIC_PWM_32K
++	bool "amlogic soc pwm 32k support"
++	depends on PWM_MESON
++	default y
++	help
++		WiFi usually needs a 32K frequency clock signal.
++		There are three possibilities:
++		using the internal 32K clock or using the 32K input from our SOC,
++		or using the onboard active 32K crystal oscillator.
++		By default,32K of SOC input is enabled,
++		if not, you can disable it by selecting n.
++
++endif
+diff --git a/drivers/amlogic/wifi/Makefile b/drivers/amlogic/wifi/Makefile
+new file mode 100644
+index 000000000000..ede0b46817bd
+--- /dev/null
++++ b/drivers/amlogic/wifi/Makefile
+@@ -0,0 +1,4 @@
++MODULE_NAME = aml_wifi
++
++obj-$(CONFIG_AMLOGIC_WIFI) = $(MODULE_NAME).o
++$(MODULE_NAME)-y = wifi_dt.o dhd_static_buf.o
+diff --git a/drivers/amlogic/wifi/dhd_static_buf.c b/drivers/amlogic/wifi/dhd_static_buf.c
+new file mode 100644
+index 000000000000..1843e235aa93
+--- /dev/null
++++ b/drivers/amlogic/wifi/dhd_static_buf.c
+@@ -0,0 +1,610 @@
++/*
++ * drivers/amlogic/wifi/dhd_static_buf.c
++ *
++ * Copyright (C) 2017 Amlogic, Inc. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ * more details.
++ *
++ */
++
++#define pr_fmt(fmt)	"Wifi: %s: " fmt, __func__
++
++#include <linux/module.h>
++#include <linux/kernel.h>
++#include <linux/init.h>
++#include <linux/platform_device.h>
++#include <linux/delay.h>
++#include <linux/err.h>
++#include <linux/skbuff.h>
++//#include <linux/wlan_plat.h>
++#include <linux/amlogic/dhd_buf.h>
++
++#define	DHD_STATIC_VERSION_STR		"101.10.361.10 (wlan=r892223-20210623-1)"
++#define STATIC_ERROR_LEVEL	BIT(0)
++#define STATIC_TRACE_LEVEL	BIT(1)
++#define STATIC_MSG_LEVEL	BIT(0)
++uint static_msg_level = STATIC_ERROR_LEVEL | STATIC_MSG_LEVEL;
++
++#define DHD_STATIC_MSG(x, args...) \
++do { \
++	if (static_msg_level & STATIC_MSG_LEVEL) { \
++		pr_err("[dhd] STATIC-MSG) %s : " x, __func__, ## args); \
++	} \
++} while (0)
++#define DHD_STATIC_ERROR(x, args...) \
++do { \
++	if (static_msg_level & STATIC_ERROR_LEVEL) { \
++		pr_err("[dhd] STATIC-ERROR) %s : " x, __func__, ## args); \
++	} \
++} while (0)
++#define DHD_STATIC_TRACE(x, args...) \
++do { \
++	if (static_msg_level & STATIC_TRACE_LEVEL) { \
++		pr_err("[dhd] STATIC-TRACE) %s : " x, __func__, ## args); \
++	} \
++} while (0)
++
++#define BCMDHD_SDIO
++#define BCMDHD_PCIE
++//#define BCMDHD_USB
++#define CONFIG_BCMDHD_VTS { : = y}
++#define CONFIG_BCMDHD_DEBUG { : = y}
++//#define BCMDHD_UNUSE_MEM
++
++enum dhd_prealloc_index {
++	DHD_PREALLOC_PROT = 0,
++#if defined(BCMDHD_SDIO)
++	DHD_PREALLOC_RXBUF = 1,
++	DHD_PREALLOC_DATABUF = 2,
++#endif /* BCMDHD_SDIO */
++	DHD_PREALLOC_OSL_BUF = 3,
++	DHD_PREALLOC_SKB_BUF = 4,
++	DHD_PREALLOC_WIPHY_ESCAN0 = 5,
++	DHD_PREALLOC_WIPHY_ESCAN1 = 6,
++	DHD_PREALLOC_DHD_INFO = 7,
++#if defined(BCMDHD_SDIO) || defined(BCMDHD_USB)
++	DHD_PREALLOC_DHD_WLFC_INFO = 8,
++#endif /* BCMDHD_SDIO | BCMDHD_USB */
++#ifdef BCMDHD_PCIE
++	DHD_PREALLOC_IF_FLOW_LKUP = 9,
++#endif /* BCMDHD_PCIE */
++	DHD_PREALLOC_MEMDUMP_BUF = 10,
++#if defined(CONFIG_BCMDHD_VTS) || defined(CONFIG_BCMDHD_DEBUG)
++	DHD_PREALLOC_MEMDUMP_RAM = 11,
++#endif /* CONFIG_BCMDHD_VTS | CONFIG_BCMDHD_DEBUG */
++#if defined(BCMDHD_SDIO) || defined(BCMDHD_USB)
++	DHD_PREALLOC_DHD_WLFC_HANGER = 12,
++#endif /* BCMDHD_SDIO | BCMDHD_USB */
++	DHD_PREALLOC_PKTID_MAP = 13,
++	DHD_PREALLOC_PKTID_MAP_IOCTL = 14,
++#if defined(CONFIG_BCMDHD_VTS) || defined(CONFIG_BCMDHD_DEBUG)
++	DHD_PREALLOC_DHD_LOG_DUMP_BUF = 15,
++	DHD_PREALLOC_DHD_LOG_DUMP_BUF_EX = 16,
++#endif /* CONFIG_BCMDHD_VTS | CONFIG_BCMDHD_DEBUG */
++	DHD_PREALLOC_DHD_PKTLOG_DUMP_BUF = 17,
++	DHD_PREALLOC_STAT_REPORT_BUF = 18,
++	DHD_PREALLOC_WL_ESCAN = 19,
++	DHD_PREALLOC_FW_VERBOSE_RING = 20,
++	DHD_PREALLOC_FW_EVENT_RING = 21,
++	DHD_PREALLOC_DHD_EVENT_RING = 22,
++#if defined(BCMDHD_UNUSE_MEM)
++	DHD_PREALLOC_NAN_EVENT_RING = 23,
++#endif /* BCMDHD_UNUSE_MEM */
++	DHD_PREALLOC_MAX
++};
++
++#define STATIC_BUF_MAX_NUM	20
++#define STATIC_BUF_SIZE	(PAGE_SIZE * 2)
++
++#ifndef CUSTOM_LOG_DUMP_BUFSIZE_MB
++/* DHD_LOG_DUMP_BUF_SIZE 4 MB static memory in kernel */
++#define CUSTOM_LOG_DUMP_BUFSIZE_MB	4
++#endif /* CUSTOM_LOG_DUMP_BUFSIZE_MB */
++
++#define DHD_PREALLOC_PROT_SIZE	(16 * 1024)
++#define DHD_PREALLOC_RXBUF_SIZE	(24 * 1024)
++#define DHD_PREALLOC_DATABUF_SIZE	(64 * 1024)
++#define DHD_PREALLOC_OSL_BUF_SIZE	(STATIC_BUF_MAX_NUM * STATIC_BUF_SIZE)
++#define DHD_PREALLOC_WIPHY_ESCAN0_SIZE	(64 * 1024)
++#define DHD_PREALLOC_DHD_INFO_SIZE	(34 * 1024)
++#if defined(CONFIG_BCMDHD_VTS) || defined(CONFIG_BCMDHD_DEBUG)
++#define DHD_PREALLOC_MEMDUMP_RAM_SIZE	(1290 * 1024)
++#endif /* CONFIG_BCMDHD_VTS | CONFIG_BCMDHD_DEBUG */
++#define DHD_PREALLOC_DHD_WLFC_HANGER_SIZE	(73 * 1024)
++#if defined(CONFIG_BCMDHD_VTS) || defined(CONFIG_BCMDHD_DEBUG)
++#define DHD_PREALLOC_DHD_LOG_DUMP_BUF_SIZE \
++	(1024 * 1024 * CUSTOM_LOG_DUMP_BUFSIZE_MB)
++#define DHD_PREALLOC_DHD_LOG_DUMP_BUF_EX_SIZE (8 * 1024)
++#endif /* CONFIG_BCMDHD_VTS | CONFIG_BCMDHD_DEBUG */
++#define DHD_PREALLOC_WL_ESCAN_SIZE	(70 * 1024)
++#ifdef CONFIG_64BIT
++#define DHD_PREALLOC_IF_FLOW_LKUP_SIZE	(20 * 1024 * 2)
++#else
++#define DHD_PREALLOC_IF_FLOW_LKUP_SIZE	(20 * 1024)
++#endif
++#define FW_VERBOSE_RING_SIZE		(256 * 1024)
++#define FW_EVENT_RING_SIZE		(64 * 1024)
++#define DHD_EVENT_RING_SIZE		(64 * 1024)
++#define NAN_EVENT_RING_SIZE		(64 * 1024)
++
++#if defined(CONFIG_64BIT)
++#define WLAN_DHD_INFO_BUF_SIZE	(24 * 1024)
++#define WLAN_DHD_WLFC_BUF_SIZE	(64 * 1024)
++#define WLAN_DHD_IF_FLOW_LKUP_SIZE	(64 * 1024)
++#else
++#define WLAN_DHD_INFO_BUF_SIZE	(16 * 1024)
++#define WLAN_DHD_WLFC_BUF_SIZE	(64 * 1024)
++#define WLAN_DHD_IF_FLOW_LKUP_SIZE	(20 * 1024)
++#endif /* CONFIG_64BIT */
++#define WLAN_DHD_MEMDUMP_SIZE	(800 * 1024)
++
++#define DHD_SKB_1PAGE_BUFSIZE	(PAGE_SIZE * 1)
++#define DHD_SKB_2PAGE_BUFSIZE	(PAGE_SIZE * 2)
++#define DHD_SKB_4PAGE_BUFSIZE	(PAGE_SIZE * 4)
++
++#define DHD_SKB_1PAGE_BUF_NUM	8
++#ifdef BCMDHD_PCIE
++#define DHD_SKB_2PAGE_BUF_NUM	192
++#elif defined(BCMDHD_SDIO)
++#define DHD_SKB_2PAGE_BUF_NUM	8
++#endif /* BCMDHD_PCIE */
++#define DHD_SKB_4PAGE_BUF_NUM	1
++
++/* The number is defined in linux_osl.c
++ * WLAN_SKB_1_2PAGE_BUF_NUM => STATIC_PKT_1_2PAGE_NUM
++ * WLAN_SKB_BUF_NUM => STATIC_PKT_MAX_NUM
++ */
++#if defined(BCMDHD_SDIO) || defined(BCMDHD_PCIE)
++#define WLAN_SKB_1_2PAGE_BUF_NUM ((DHD_SKB_1PAGE_BUF_NUM) + \
++		(DHD_SKB_2PAGE_BUF_NUM))
++#define WLAN_SKB_BUF_NUM ((WLAN_SKB_1_2PAGE_BUF_NUM) + (DHD_SKB_4PAGE_BUF_NUM))
++#endif
++
++void *wlan_static_prot;
++void *wlan_static_rxbuf;
++void *wlan_static_databuf;
++void *wlan_static_osl_buf;
++void *wlan_static_scan_buf0;
++void *wlan_static_scan_buf1;
++void *wlan_static_dhd_info_buf;
++void *wlan_static_dhd_wlfc_info_buf;
++void *wlan_static_if_flow_lkup;
++void *wlan_static_dhd_memdump_ram_buf;
++void *wlan_static_dhd_wlfc_hanger_buf;
++#if defined(CONFIG_BCMDHD_VTS) || defined(CONFIG_BCMDHD_DEBUG)
++void *wlan_static_dhd_log_dump_buf;
++void *wlan_static_dhd_log_dump_buf_ex;
++#endif /* CONFIG_BCMDHD_VTS | CONFIG_BCMDHD_DEBUG */
++void *wlan_static_wl_escan_info_buf;
++void *wlan_static_fw_verbose_ring_buf;
++void *wlan_static_fw_event_ring_buf;
++void *wlan_static_dhd_event_ring_buf;
++void *wlan_static_nan_event_ring_buf;
++
++#if defined(BCMDHD_SDIO) || defined(BCMDHD_PCIE)
++static struct sk_buff *wlan_static_skb[WLAN_SKB_BUF_NUM];
++#endif /* BCMDHD_SDIO | BCMDHD_PCIE */
++
++void *bcmdhd_mem_prealloc(int section, unsigned long size)
++{
++	DHD_STATIC_TRACE("sectoin %d, size %ld\n", section, size);
++	if (section == DHD_PREALLOC_PROT)
++		return wlan_static_prot;
++
++#if defined(BCMDHD_SDIO)
++	if (section == DHD_PREALLOC_RXBUF)
++		return wlan_static_rxbuf;
++
++	if (section == DHD_PREALLOC_DATABUF)
++		return wlan_static_databuf;
++#endif /* BCMDHD_SDIO */
++
++#if defined(BCMDHD_SDIO) || defined(BCMDHD_PCIE)
++	if (section == DHD_PREALLOC_SKB_BUF)
++		return wlan_static_skb;
++#endif /* BCMDHD_SDIO | BCMDHD_PCIE */
++
++	if (section == DHD_PREALLOC_WIPHY_ESCAN0)
++		return wlan_static_scan_buf0;
++
++	if (section == DHD_PREALLOC_WIPHY_ESCAN1)
++		return wlan_static_scan_buf1;
++
++	if (section == DHD_PREALLOC_OSL_BUF) {
++		if (size > DHD_PREALLOC_OSL_BUF_SIZE) {
++			DHD_STATIC_ERROR("request OSL_BUF(%lu) > %ld\n",
++				size, DHD_PREALLOC_OSL_BUF_SIZE);
++			return NULL;
++		}
++		return wlan_static_osl_buf;
++	}
++
++	if (section == DHD_PREALLOC_DHD_INFO) {
++		if (size > DHD_PREALLOC_DHD_INFO_SIZE) {
++			DHD_STATIC_ERROR("request DHD_INFO(%lu) > %d\n",
++				size, DHD_PREALLOC_DHD_INFO_SIZE);
++			return NULL;
++		}
++		return wlan_static_dhd_info_buf;
++	}
++#if defined(BCMDHD_SDIO) || defined(BCMDHD_USB)
++	if (section == DHD_PREALLOC_DHD_WLFC_INFO) {
++		if (size > WLAN_DHD_WLFC_BUF_SIZE) {
++			DHD_STATIC_ERROR("request DHD_WLFC_INFO(%lu) > %d\n",
++				size, WLAN_DHD_WLFC_BUF_SIZE);
++			return NULL;
++		}
++		return wlan_static_dhd_wlfc_info_buf;
++	}
++#endif /* BCMDHD_SDIO | BCMDHD_USB */
++#ifdef BCMDHD_PCIE
++	if (section == DHD_PREALLOC_IF_FLOW_LKUP)  {
++		if (size > DHD_PREALLOC_IF_FLOW_LKUP_SIZE) {
++			DHD_STATIC_ERROR("request DHD_IF_FLOW_LKUP(%lu) > %d\n",
++				size, DHD_PREALLOC_IF_FLOW_LKUP_SIZE);
++			return NULL;
++		}
++		return wlan_static_if_flow_lkup;
++	}
++#endif /* BCMDHD_PCIE */
++#if defined(CONFIG_BCMDHD_VTS) || defined(CONFIG_BCMDHD_DEBUG)
++	if (section == DHD_PREALLOC_MEMDUMP_RAM) {
++		if (size > DHD_PREALLOC_MEMDUMP_RAM_SIZE) {
++			DHD_STATIC_ERROR("request MEMDUMP_RAM(%lu) > %d\n",
++				size, DHD_PREALLOC_MEMDUMP_RAM_SIZE);
++			return NULL;
++		}
++		return wlan_static_dhd_memdump_ram_buf;
++	}
++#endif /* CONFIG_BCMDHD_VTS | CONFIG_BCMDHD_DEBUG */
++#if defined(BCMDHD_SDIO) || defined(BCMDHD_USB)
++	if (section == DHD_PREALLOC_DHD_WLFC_HANGER) {
++		if (size > DHD_PREALLOC_DHD_WLFC_HANGER_SIZE) {
++			DHD_STATIC_ERROR("request DHD_WLFC_HANGER(%lu) > %d\n",
++				size, DHD_PREALLOC_DHD_WLFC_HANGER_SIZE);
++			return NULL;
++		}
++		return wlan_static_dhd_wlfc_hanger_buf;
++	}
++#endif /* BCMDHD_SDIO | BCMDHD_USB */
++#if defined(CONFIG_BCMDHD_VTS) || defined(CONFIG_BCMDHD_DEBUG)
++	if (section == DHD_PREALLOC_DHD_LOG_DUMP_BUF) {
++		if (size > DHD_PREALLOC_DHD_LOG_DUMP_BUF_SIZE) {
++			DHD_STATIC_ERROR("request DHD_LOG_DUMP_BUF(%lu) > %d\n",
++				size, DHD_PREALLOC_DHD_LOG_DUMP_BUF_SIZE);
++			return NULL;
++		}
++		return wlan_static_dhd_log_dump_buf;
++	}
++	if (section == DHD_PREALLOC_DHD_LOG_DUMP_BUF_EX) {
++		if (size > DHD_PREALLOC_DHD_LOG_DUMP_BUF_EX_SIZE) {
++			DHD_STATIC_ERROR("request DUMP_BUF_EX(%lu) > %d\n",
++				size, DHD_PREALLOC_DHD_LOG_DUMP_BUF_EX_SIZE);
++			return NULL;
++		}
++		return wlan_static_dhd_log_dump_buf_ex;
++	}
++#endif /* CONFIG_BCMDHD_VTS | CONFIG_BCMDHD_DEBUG */
++	if (section == DHD_PREALLOC_WL_ESCAN) {
++		if (size > DHD_PREALLOC_WL_ESCAN_SIZE) {
++			DHD_STATIC_ERROR("request WL_ESCAN(%lu) > %d\n",
++				size, DHD_PREALLOC_WL_ESCAN_SIZE);
++			return NULL;
++		}
++		return wlan_static_wl_escan_info_buf;
++	}
++	if (section == DHD_PREALLOC_FW_VERBOSE_RING) {
++		if (size > FW_VERBOSE_RING_SIZE) {
++			DHD_STATIC_ERROR("request FW_VERBOSE_RING(%lu) > %d\n",
++				size, FW_VERBOSE_RING_SIZE);
++			return NULL;
++		}
++		return wlan_static_fw_verbose_ring_buf;
++	}
++	if (section == DHD_PREALLOC_FW_EVENT_RING) {
++		if (size > FW_EVENT_RING_SIZE) {
++			DHD_STATIC_ERROR("request FW_EVENT_RING(%lu) > %d\n",
++				size, FW_EVENT_RING_SIZE);
++			return NULL;
++		}
++		return wlan_static_fw_event_ring_buf;
++	}
++	if (section == DHD_PREALLOC_DHD_EVENT_RING) {
++		if (size > DHD_EVENT_RING_SIZE) {
++			DHD_STATIC_ERROR("request DHD_EVENT_RING(%lu) > %d\n",
++				size, DHD_EVENT_RING_SIZE);
++			return NULL;
++		}
++		return wlan_static_dhd_event_ring_buf;
++	}
++#if defined(BCMDHD_UNUSE_MEM)
++	if (section == DHD_PREALLOC_NAN_EVENT_RING) {
++		if (size > NAN_EVENT_RING_SIZE) {
++			DHD_STATIC_ERROR("request DHD_NAN_RING(%lu) > %d\n",
++				size, NAN_EVENT_RING_SIZE);
++			return NULL;
++		}
++		return wlan_static_nan_event_ring_buf;
++	}
++#endif /* BCMDHD_UNUSE_MEM */
++	if (section < 0 || section > DHD_PREALLOC_MAX)
++		DHD_STATIC_ERROR("request section id(%d) is out of max %d\n",
++			section, DHD_PREALLOC_MAX);
++
++	DHD_STATIC_ERROR("failed to alloc section %d, size=%ld\n",
++		section, size);
++
++	return NULL;
++}
++EXPORT_SYMBOL(bcmdhd_mem_prealloc);
++
++int bcmdhd_init_wlan_mem(unsigned int all_buf)
++{
++#if defined(BCMDHD_SDIO) || defined(BCMDHD_PCIE)
++	int i;
++#endif
++	unsigned long size = 0;
++
++	DHD_STATIC_MSG("%s\n", DHD_STATIC_VERSION_STR);
++
++#if defined(BCMDHD_SDIO) || defined(BCMDHD_PCIE)
++	for (i = 0; i < WLAN_SKB_BUF_NUM; i++)
++		wlan_static_skb[i] = NULL;
++
++	for (i = 0; i < DHD_SKB_1PAGE_BUF_NUM; i++) {
++		wlan_static_skb[i] = dev_alloc_skb(DHD_SKB_1PAGE_BUFSIZE);
++		if (!wlan_static_skb[i])
++			goto err_skb_alloc;
++
++		size += DHD_SKB_1PAGE_BUFSIZE;
++		DHD_STATIC_TRACE("sectoin %d skb[%d], size=%ld\n",
++			DHD_PREALLOC_SKB_BUF, i, DHD_SKB_1PAGE_BUFSIZE);
++	}
++
++	for (i = DHD_SKB_1PAGE_BUF_NUM; i < WLAN_SKB_1_2PAGE_BUF_NUM; i++) {
++		wlan_static_skb[i] = dev_alloc_skb(DHD_SKB_2PAGE_BUFSIZE);
++		if (!wlan_static_skb[i])
++			goto err_skb_alloc;
++
++		size += DHD_SKB_2PAGE_BUFSIZE;
++		DHD_STATIC_TRACE("sectoin %d skb[%d], size=%ld\n",
++			DHD_PREALLOC_SKB_BUF, i, DHD_SKB_2PAGE_BUFSIZE);
++	}
++#endif /* BCMDHD_SDIO | BCMDHD_PCIE */
++	if (all_buf == 1) {
++#if defined(BCMDHD_SDIO)
++		wlan_static_skb[i] = dev_alloc_skb(DHD_SKB_4PAGE_BUFSIZE);
++		if (!wlan_static_skb[i])
++			goto err_skb_alloc;
++		size += DHD_SKB_4PAGE_BUFSIZE;
++		DHD_STATIC_TRACE("sectoin %d skb[%d], size=%ld\n",
++			DHD_PREALLOC_SKB_BUF, i, DHD_SKB_4PAGE_BUFSIZE);
++#endif /* BCMDHD_SDIO */
++
++		wlan_static_prot = kmalloc(DHD_PREALLOC_PROT_SIZE, GFP_KERNEL);
++		if (!wlan_static_prot)
++			goto err_mem_alloc;
++		size += DHD_PREALLOC_PROT_SIZE;
++		DHD_STATIC_TRACE("sectoin %d, size=%d\n",
++			DHD_PREALLOC_PROT, DHD_PREALLOC_PROT_SIZE);
++
++#if defined(BCMDHD_SDIO)
++		wlan_static_rxbuf =
++			kmalloc(DHD_PREALLOC_RXBUF_SIZE, GFP_KERNEL);
++		if (!wlan_static_rxbuf)
++			goto err_mem_alloc;
++		size += DHD_PREALLOC_RXBUF_SIZE;
++		DHD_STATIC_TRACE("sectoin %d, size=%d\n",
++			DHD_PREALLOC_RXBUF, DHD_PREALLOC_RXBUF_SIZE);
++
++		wlan_static_databuf =
++			kmalloc(DHD_PREALLOC_DATABUF_SIZE, GFP_KERNEL);
++		if (!wlan_static_databuf)
++			goto err_mem_alloc;
++		size += DHD_PREALLOC_DATABUF_SIZE;
++		DHD_STATIC_TRACE("sectoin %d, size=%d\n",
++			DHD_PREALLOC_DATABUF, DHD_PREALLOC_DATABUF_SIZE);
++#endif /* BCMDHD_SDIO */
++
++		wlan_static_osl_buf =
++			kmalloc(DHD_PREALLOC_OSL_BUF_SIZE, GFP_KERNEL);
++		if (!wlan_static_osl_buf)
++			goto err_mem_alloc;
++		size += DHD_PREALLOC_OSL_BUF_SIZE;
++		DHD_STATIC_TRACE("sectoin %d, size=%ld\n",
++			DHD_PREALLOC_OSL_BUF, DHD_PREALLOC_OSL_BUF_SIZE);
++
++		wlan_static_scan_buf0 =
++			kmalloc(DHD_PREALLOC_WIPHY_ESCAN0_SIZE, GFP_KERNEL);
++		if (!wlan_static_scan_buf0)
++			goto err_mem_alloc;
++		size += DHD_PREALLOC_WIPHY_ESCAN0_SIZE;
++		DHD_STATIC_TRACE("sectoin %d, size=%d\n",
++			DHD_PREALLOC_WIPHY_ESCAN0,
++			DHD_PREALLOC_WIPHY_ESCAN0_SIZE);
++
++		wlan_static_dhd_info_buf =
++			kmalloc(DHD_PREALLOC_DHD_INFO_SIZE, GFP_KERNEL);
++		if (!wlan_static_dhd_info_buf)
++			goto err_mem_alloc;
++		size += DHD_PREALLOC_DHD_INFO_SIZE;
++		DHD_STATIC_TRACE("sectoin %d, size=%d\n",
++			DHD_PREALLOC_DHD_INFO, DHD_PREALLOC_DHD_INFO_SIZE);
++
++#if defined(BCMDHD_SDIO) || defined(BCMDHD_USB)
++		wlan_static_dhd_wlfc_info_buf =
++			kmalloc(WLAN_DHD_WLFC_BUF_SIZE, GFP_KERNEL);
++		if (!wlan_static_dhd_wlfc_info_buf)
++			goto err_mem_alloc;
++		size += WLAN_DHD_WLFC_BUF_SIZE;
++		DHD_STATIC_TRACE("sectoin %d, size=%d\n",
++			DHD_PREALLOC_DHD_WLFC_INFO, WLAN_DHD_WLFC_BUF_SIZE);
++#endif /* BCMDHD_SDIO | BCMDHD_USB */
++
++#ifdef BCMDHD_PCIE
++		wlan_static_if_flow_lkup =
++			kmalloc(DHD_PREALLOC_IF_FLOW_LKUP_SIZE, GFP_KERNEL);
++		if (!wlan_static_if_flow_lkup)
++			goto err_mem_alloc;
++		size += DHD_PREALLOC_IF_FLOW_LKUP_SIZE;
++		DHD_STATIC_TRACE("sectoin %d, size=%d\n",
++			DHD_PREALLOC_IF_FLOW_LKUP,
++			DHD_PREALLOC_IF_FLOW_LKUP_SIZE);
++#endif /* BCMDHD_PCIE */
++	}
++
++#if defined(CONFIG_BCMDHD_VTS) || defined(CONFIG_BCMDHD_DEBUG)
++	wlan_static_dhd_memdump_ram_buf =
++		kmalloc(DHD_PREALLOC_MEMDUMP_RAM_SIZE, GFP_KERNEL);
++	if (!wlan_static_dhd_memdump_ram_buf)
++		goto err_mem_alloc;
++	size += DHD_PREALLOC_MEMDUMP_RAM_SIZE;
++	DHD_STATIC_TRACE("sectoin %d, size=%d\n",
++		DHD_PREALLOC_MEMDUMP_RAM, DHD_PREALLOC_MEMDUMP_RAM_SIZE);
++#endif /* CONFIG_BCMDHD_VTS | CONFIG_BCMDHD_DEBUG */
++	if (all_buf == 1) {
++#if defined(BCMDHD_SDIO) || defined(BCMDHD_USB)
++		wlan_static_dhd_wlfc_hanger_buf =
++			kmalloc(DHD_PREALLOC_DHD_WLFC_HANGER_SIZE, GFP_KERNEL);
++		if (!wlan_static_dhd_wlfc_hanger_buf)
++			goto err_mem_alloc;
++		size += DHD_PREALLOC_DHD_WLFC_HANGER_SIZE;
++		DHD_STATIC_TRACE("sectoin %d, size=%d\n",
++			DHD_PREALLOC_DHD_WLFC_HANGER,
++			DHD_PREALLOC_DHD_WLFC_HANGER_SIZE);
++#endif /* BCMDHD_SDIO | BCMDHD_USB */
++
++#if defined(CONFIG_BCMDHD_VTS) || defined(CONFIG_BCMDHD_DEBUG)
++		wlan_static_dhd_log_dump_buf =
++			kmalloc(DHD_PREALLOC_DHD_LOG_DUMP_BUF_SIZE, GFP_KERNEL);
++		if (!wlan_static_dhd_log_dump_buf)
++			goto err_mem_alloc;
++		size += DHD_PREALLOC_DHD_LOG_DUMP_BUF_SIZE;
++		DHD_STATIC_TRACE("sectoin %d, size=%d\n",
++			DHD_PREALLOC_DHD_LOG_DUMP_BUF,
++			DHD_PREALLOC_DHD_LOG_DUMP_BUF_SIZE);
++
++		wlan_static_dhd_log_dump_buf_ex =
++			kmalloc(DHD_PREALLOC_DHD_LOG_DUMP_BUF_EX_SIZE,
++			GFP_KERNEL);
++		if (!wlan_static_dhd_log_dump_buf_ex)
++			goto err_mem_alloc;
++		size += DHD_PREALLOC_DHD_LOG_DUMP_BUF_EX_SIZE;
++		DHD_STATIC_TRACE("sectoin %d, size=%d\n",
++			DHD_PREALLOC_DHD_LOG_DUMP_BUF_EX,
++			DHD_PREALLOC_DHD_LOG_DUMP_BUF_EX_SIZE);
++#endif /* CONFIG_BCMDHD_VTS | CONFIG_BCMDHD_DEBUG */
++
++		wlan_static_wl_escan_info_buf =
++			kmalloc(DHD_PREALLOC_WL_ESCAN_SIZE, GFP_KERNEL);
++		if (!wlan_static_wl_escan_info_buf)
++			goto err_mem_alloc;
++		size += DHD_PREALLOC_WL_ESCAN_SIZE;
++		DHD_STATIC_TRACE("sectoin %d, size=%d\n",
++			DHD_PREALLOC_WL_ESCAN, DHD_PREALLOC_WL_ESCAN_SIZE);
++	}
++	wlan_static_fw_verbose_ring_buf =
++		kmalloc(FW_VERBOSE_RING_SIZE, GFP_KERNEL);
++	if (!wlan_static_fw_verbose_ring_buf)
++		goto err_mem_alloc;
++	size += FW_VERBOSE_RING_SIZE;
++	DHD_STATIC_TRACE("sectoin %d, size=%d\n",
++		DHD_PREALLOC_FW_VERBOSE_RING, FW_VERBOSE_RING_SIZE);
++
++	if (all_buf == 1) {
++		wlan_static_fw_event_ring_buf =
++			kmalloc(FW_EVENT_RING_SIZE, GFP_KERNEL);
++		if (!wlan_static_fw_event_ring_buf)
++			goto err_mem_alloc;
++		size += FW_EVENT_RING_SIZE;
++		DHD_STATIC_TRACE("sectoin %d, size=%d\n",
++			DHD_PREALLOC_FW_EVENT_RING, FW_EVENT_RING_SIZE);
++
++		wlan_static_dhd_event_ring_buf =
++			kmalloc(DHD_EVENT_RING_SIZE, GFP_KERNEL);
++		if (!wlan_static_dhd_event_ring_buf)
++			goto err_mem_alloc;
++		size += DHD_EVENT_RING_SIZE;
++		DHD_STATIC_TRACE("sectoin %d, size=%d\n",
++			DHD_PREALLOC_DHD_EVENT_RING, DHD_EVENT_RING_SIZE);
++
++#if defined(BCMDHD_UNUSE_MEM)
++		wlan_static_nan_event_ring_buf =
++			kmalloc(NAN_EVENT_RING_SIZE, GFP_KERNEL);
++		if (!wlan_static_nan_event_ring_buf)
++			goto err_mem_alloc;
++		size += NAN_EVENT_RING_SIZE;
++		DHD_STATIC_TRACE("sectoin %d, size=%d\n",
++			DHD_PREALLOC_NAN_EVENT_RING, NAN_EVENT_RING_SIZE);
++#endif /* BCMDHD_UNUSE_MEM */
++	}
++	DHD_STATIC_MSG("prealloc ok: %ld(%ldK)\n", size, size / 1024);
++	return 0;
++
++err_mem_alloc:
++	if (all_buf == 1) {
++		kfree(wlan_static_prot);
++#if defined(BCMDHD_SDIO)
++		kfree(wlan_static_rxbuf);
++		kfree(wlan_static_databuf);
++#endif /* BCMDHD_SDIO */
++		kfree(wlan_static_osl_buf);
++		kfree(wlan_static_scan_buf0);
++		kfree(wlan_static_scan_buf1);
++		kfree(wlan_static_dhd_info_buf);
++#if defined(BCMDHD_SDIO) || defined(BCMDHD_USB)
++		kfree(wlan_static_dhd_wlfc_info_buf);
++#endif /* BCMDHD_SDIO | BCMDHD_USB */
++#ifdef BCMDHD_PCIE
++		kfree(wlan_static_if_flow_lkup);
++#endif /* BCMDHD_PCIE */
++	}
++#if defined(CONFIG_BCMDHD_VTS) || defined(CONFIG_BCMDHD_DEBUG)
++		kfree(wlan_static_dhd_memdump_ram_buf);
++#endif /* CONFIG_BCMDHD_VTS | CONFIG_BCMDHD_DEBUG */
++	if (all_buf == 1) {
++#if defined(BCMDHD_SDIO) || defined(BCMDHD_USB)
++		kfree(wlan_static_dhd_wlfc_hanger_buf);
++#endif /* BCMDHD_SDIO | BCMDHD_USB */
++#if defined(CONFIG_BCMDHD_VTS) || defined(CONFIG_BCMDHD_DEBUG)
++		kfree(wlan_static_dhd_log_dump_buf);
++		kfree(wlan_static_dhd_log_dump_buf_ex);
++#endif /* CONFIG_BCMDHD_VTS | CONFIG_BCMDHD_DEBUG */
++		kfree(wlan_static_wl_escan_info_buf);
++	}
++#ifdef BCMDHD_PCIE
++	kfree(wlan_static_fw_verbose_ring_buf);
++	if (all_buf == 1) {
++		kfree(wlan_static_fw_event_ring_buf);
++		kfree(wlan_static_dhd_event_ring_buf);
++#if defined(BCMDHD_UNUSE_MEM)
++		kfree(wlan_static_nan_event_ring_buf);
++#endif /* BCMDHD_UNUSE_MEM */
++	}
++#endif /* BCMDHD_PCIE */
++
++	DHD_STATIC_ERROR("Failed to mem_alloc for WLAN\n");
++
++#if defined(BCMDHD_SDIO) || defined(BCMDHD_PCIE)
++err_skb_alloc:
++	DHD_STATIC_ERROR("Failed to skb_alloc for WLAN\n");
++	for (i = 0; i < WLAN_SKB_BUF_NUM; i++) {
++		if (wlan_static_skb[i])
++			dev_kfree_skb(wlan_static_skb[i]);
++	}
++#endif /* BCMDHD_SDIO | BCMDHD_PCIE */
++
++	return -ENOMEM;
++}
++EXPORT_SYMBOL(bcmdhd_init_wlan_mem);
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("AMLOGIC");
++MODULE_DESCRIPTION("wifi device tree driver");
+diff --git a/drivers/amlogic/wifi/wifi_dt.c b/drivers/amlogic/wifi/wifi_dt.c
+new file mode 100644
+index 000000000000..c40c58212893
+--- /dev/null
++++ b/drivers/amlogic/wifi/wifi_dt.c
+@@ -0,0 +1,1031 @@
++// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
++/*
++ * drivers/amlogic/wifi/wifi_dt.c
++ *
++ * Copyright (C) 2017 Amlogic, Inc. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ * more details.
++ *
++ */
++
++#include <linux/amlogic/wifi_dt.h>
++#include <linux/amlogic/dhd_buf.h>
++
++#include <linux/module.h>
++#include <linux/interrupt.h>
++#include <linux/irq.h>
++#include <linux/of_irq.h>
++#include <linux/delay.h>
++#include <linux/cdev.h>
++#include <linux/proc_fs.h>
++#include <linux/device.h>
++#include <linux/platform_device.h>
++#include <linux/of.h>
++#include <linux/pinctrl/consumer.h>
++#include <linux/amlogic/aml_gpio_consumer.h>
++#include <linux/of_gpio.h>
++#include <linux/gpio.h>
++#include <linux/amlogic/cpu_version.h>
++#include <linux/io.h>
++#include <linux/uaccess.h>
++#include <linux/pci.h>
++#ifdef CONFIG_AMLOGIC_PWM_32K
++#include <linux/pwm.h>
++#include <linux/amlogic/pwm-meson.h>
++#endif
++#include "../../gpio/gpiolib-of.h"
++#define OWNER_NAME "sdio_wifi"
++
++struct pcie_wifi_chip {
++	unsigned int vendor;
++	unsigned int device;
++};
++
++static const struct pcie_wifi_chip pcie_wifi[] = {
++	{0x16c3, 0xabcd}
++};
++
++int wifi_power_gpio;
++int wifi_power_gpio2;
++
++/*this function tells wifi is using sd(sdiob) or sdio(sdioa)*/
++char *get_wifi_inf(void)
++{
++        return "sdiob";
++}
++EXPORT_SYMBOL(get_wifi_inf);
++
++#ifdef CONFIG_AMLOGIC_PWM_32K
++/*
++ *there are two pwm channel outputs using one gpio
++ *for gxtvbb and the follows soc
++ */
++struct pwm_double_data {
++	struct pwm_device *pwm;
++	unsigned int duty_cycle;
++	unsigned int pwm_times;
++};
++
++struct pwm_double_datas {
++	int num_pwm;
++	struct pwm_double_data pwms[2];
++};
++
++struct pwm_single_data {
++	struct pwm_device *pwm;
++	unsigned int duty_cycle;
++};
++#endif
++
++struct wifi_plat_info {
++	int interrupt_pin;
++	int irq_num;
++	int irq_trigger_type;
++
++	int power_on_pin;
++	int power_on_pin_level;
++	int power_on_pin_OD;
++	int power_on_pin2;
++	int chip_en_pin;
++	int power_init_off;
++
++	int clock_32k_pin;
++	struct gpio_desc *interrupt_desc;
++	struct gpio_desc *powe_desc;
++
++	int plat_info_valid;
++	struct pinctrl *p;
++	struct device		*dev;
++#ifdef CONFIG_AMLOGIC_PWM_32K
++	struct pwm_double_datas ddata;
++	struct pwm_single_data sdata;
++#endif
++};
++
++#define WIFI_POWER_MODULE_NAME	"wifi_power"
++#define WIFI_POWER_DRIVER_NAME	"wifi_power"
++#define WIFI_POWER_DEVICE_NAME	"wifi_power"
++#define WIFI_POWER_CLASS_NAME		"wifi_power"
++
++#define USB_POWER_UP    _IO('m', 1)
++#define USB_POWER_DOWN  _IO('m', 2)
++#define WIFI_POWER_UP    _IO('m', 3)
++#define WIFI_POWER_DOWN  _IO('m', 4)
++#define SDIO_GET_DEV_TYPE  _IO('m', 5)
++static struct wifi_plat_info wifi_info;
++static dev_t wifi_power_devno;
++static struct cdev *wifi_power_cdev;
++static struct device *devp;
++struct wifi_power_platform_data *pdata;
++
++static int usb_power;
++#define BT_BIT	0
++#define WIFI_BIT	1
++static DEFINE_MUTEX(wifi_bt_mutex);
++
++#define WIFI_INFO(fmt, args...)	\
++	dev_info(wifi_info.dev, "[%s] " fmt, __func__, ##args)
++
++#ifdef CONFIG_OF
++static const struct of_device_id wifi_match[] = {
++	{
++		.compatible = "amlogic, aml-wifi",
++		.data		= (void *)&wifi_info
++	},
++	{},
++};
++
++static struct wifi_plat_info *wifi_get_driver_data
++	(struct platform_device *pdev)
++{
++	const struct of_device_id *match;
++
++	match = of_match_node(wifi_match, pdev->dev.of_node);
++	if (!match)
++		return NULL;
++	return (struct wifi_plat_info *)match->data;
++}
++#else
++#define wifi_match NULL
++#endif
++
++#define SHOW_PIN_OWN(pin_str, pin_num)	\
++	WIFI_INFO("%s(%d)\n", pin_str, pin_num)
++
++static int set_power(int value)
++{
++	if (!wifi_info.power_on_pin_OD) {
++		if (wifi_info.power_on_pin_level)
++			return gpio_direction_output(wifi_info.power_on_pin,
++					!value);
++		else
++			return gpio_direction_output(wifi_info.power_on_pin,
++					value);
++	} else {
++		if (wifi_info.power_on_pin_level) {
++			if (value)
++				gpio_direction_input(wifi_info.power_on_pin);
++			else
++				gpio_direction_output(wifi_info.power_on_pin,
++						      0);
++		} else {
++			if (value)
++				gpio_direction_output(wifi_info.power_on_pin,
++						      0);
++			else
++				gpio_direction_input(wifi_info.power_on_pin);
++		}
++	}
++	return 0;
++}
++
++static int set_power2(int value)
++{
++	if (wifi_info.power_on_pin_level)
++		return gpio_direction_output(wifi_info.power_on_pin2,
++				!value);
++	else
++		return gpio_direction_output(wifi_info.power_on_pin2,
++				value);
++}
++
++static int set_wifi_power(int is_power)
++{
++	int ret = 0;
++
++	if (is_power) {
++		if (wifi_info.power_on_pin) {
++			ret = set_power(1);
++			if (ret)
++				WIFI_INFO("power up failed(%d)\n", ret);
++		}
++		if (wifi_info.power_on_pin2) {
++			ret = set_power2(1);
++			if (ret)
++				WIFI_INFO("power2 up failed(%d)\n", ret);
++		}
++	} else {
++		if (wifi_info.power_on_pin) {
++			ret = set_power(0);
++			if (ret)
++				WIFI_INFO("power down failed(%d)\n", ret);
++		}
++		if (wifi_info.power_on_pin2) {
++			ret = set_power2(0);
++			if (ret)
++				WIFI_INFO("power2 down failed(%d)\n", ret);
++		}
++	}
++	return ret;
++}
++
++static void usb_power_control(int is_power, int shift)
++{
++	mutex_lock(&wifi_bt_mutex);
++	if (is_power) {
++		if (!usb_power) {
++			set_wifi_power(is_power);
++			WIFI_INFO("Set %s power on !\n",
++				  (shift ? "WiFi" : "BT"));
++			msleep(200);
++			// !!!FIXME sdio_reinit();
++		}
++		usb_power |= (1 << shift);
++		WIFI_INFO("Set %s power on !\n",
++			  (shift ? "WiFi" : "BT"));
++	} else {
++		usb_power &= ~(1 << shift);
++		if (!usb_power) {
++			set_wifi_power(is_power);
++			msleep(200);
++			WIFI_INFO("Set %s power down\n",
++				  (shift ? "WiFi" : "BT"));
++		}
++	}
++	mutex_unlock(&wifi_bt_mutex);
++}
++
++void set_usb_bt_power(int is_power)
++{
++	usb_power_control(is_power, BT_BIT);
++}
++EXPORT_SYMBOL(set_usb_bt_power);
++
++void set_usb_wifi_power(int is_power)
++{
++	usb_power_control(is_power, WIFI_BIT);
++}
++EXPORT_SYMBOL(set_usb_wifi_power);
++static int  wifi_power_open(struct inode *inode, struct file *file)
++{
++	struct cdev *cdevp = inode->i_cdev;
++
++	file->private_data = cdevp;
++	return 0;
++}
++
++static int  wifi_power_release(struct inode *inode, struct file *file)
++{
++	return 0;
++}
++
++#ifdef CONFIG_PCI
++void pci_remove(void)
++{
++	struct pci_dev *device = NULL;
++	struct pci_dev *devicebus = NULL;
++	int n = 0;
++	int i = 0;
++
++	WIFI_INFO("pci remove!\n");
++	n = (int)(sizeof(pcie_wifi) / sizeof(struct pcie_wifi_chip));
++	for (i = 0; i < n; i++) {
++		device = pci_get_device(pcie_wifi[i].vendor,
++			pcie_wifi[i].device, NULL);
++		if (device) {
++			WIFI_INFO("found device 0x%x:0x%x, remove it!\n",
++				pcie_wifi[i].vendor, pcie_wifi[i].device);
++			devicebus = device->bus->self;
++			pci_stop_and_remove_bus_device_locked(device);
++			if (devicebus) {
++				WIFI_INFO("remove bus!\n");
++				pci_stop_and_remove_bus_device_locked(devicebus);
++			}
++		}
++	}
++}
++EXPORT_SYMBOL(pci_remove);
++
++void pci_reinit(void)
++{
++	struct pci_bus *bus = NULL;
++	int cnt = 20;
++
++	WIFI_INFO("pci wifi reinit!\n");
++
++	pci_lock_rescan_remove();
++	while ((bus = pci_find_next_bus(bus)) != NULL) {
++		pci_rescan_bus(bus);
++		WIFI_INFO("rescanning pci device\n");
++		cnt--;
++		if (cnt <= 0)
++			break;
++	}
++	pci_unlock_rescan_remove();
++}
++#else
++void pci_reinit(void)
++{
++	WIFI_INFO("PCI disabled!\n");
++}
++#endif
++EXPORT_SYMBOL(pci_reinit);
++
++#ifdef CONFIG_PCI
++void pci_remove_reinit(unsigned int vid, unsigned int pid, unsigned int del_bus)
++{
++	struct pci_bus *bus = NULL;
++	struct pci_dev *dev_device = NULL;
++	struct pci_dev *dev_bus = NULL;
++	int cnt = 20;
++
++	WIFI_INFO("pci wifi remove and reinit\n");
++	dev_device = pci_get_device(vid, pid, NULL);
++
++	if (dev_device) {
++		WIFI_INFO("device 0x%x:0x%x found, remove it\n", vid, pid);
++		dev_bus = dev_device->bus->self;
++		pci_stop_and_remove_bus_device_locked(dev_device);
++
++		if (del_bus > 0 && dev_bus) {
++			WIFI_INFO("remove ths bus this device on!\n");
++			pci_stop_and_remove_bus_device_locked(dev_bus);
++		}
++	} else {
++		WIFI_INFO("target pci device not found 0x%x:0x%x\n", vid, pid);
++	}
++
++	set_usb_wifi_power(0);
++	set_usb_wifi_power(1);
++
++	pci_lock_rescan_remove();
++	while ((bus = pci_find_next_bus(bus)) != NULL) {
++		pci_rescan_bus(bus);
++		WIFI_INFO("rescanning pci device\n");
++		cnt--;
++		if (cnt <= 0)
++			break;
++	}
++	pci_unlock_rescan_remove();
++}
++#else
++void pci_remove_reinit(unsigned int vid, unsigned int pid, unsigned int del_bus)
++{
++	WIFI_INFO("PCI disabled!\n");
++}
++#endif
++EXPORT_SYMBOL(pci_remove_reinit);
++
++static long wifi_power_ioctl(struct file *filp,
++			     unsigned int cmd, unsigned long arg)
++{
++	char dev_type[10] = {'\0'};
++
++	switch (cmd) {
++	case USB_POWER_UP:
++		set_usb_wifi_power(0);
++		set_usb_wifi_power(1);
++		WIFI_INFO(KERN_INFO "ioctl Set usb_sdio wifi power up!\n");
++		break;
++	case USB_POWER_DOWN:
++		set_usb_wifi_power(0);
++		WIFI_INFO(KERN_INFO "ioctl Set usb_sdio wifi power down!\n");
++		break;
++	case WIFI_POWER_UP:
++		pci_remove();
++		set_usb_wifi_power(0);
++		set_usb_wifi_power(1);
++		pci_reinit();
++		WIFI_INFO("Set sdio wifi power up!\n");
++		break;
++	case WIFI_POWER_DOWN:
++		set_usb_wifi_power(0);
++		WIFI_INFO("ioctl Set sdio wifi power down!\n");
++		break;
++	case SDIO_GET_DEV_TYPE:
++		if (strlen(get_wifi_inf()) >= sizeof(dev_type))
++			memcpy(dev_type, get_wifi_inf(),
++			       (sizeof(dev_type) - 1));
++		else
++			memcpy(dev_type, get_wifi_inf(),
++			       strlen(get_wifi_inf()));
++		WIFI_INFO("wifi interface dev type: %s, length = %d\n",
++			  dev_type, (int)strlen(dev_type));
++		if (copy_to_user((char __user *)arg,
++				 dev_type, strlen(dev_type)))
++			return -ENOTTY;
++		break;
++	default:
++		WIFI_INFO("usb %s: default !!!\n", __func__);
++		return -EINVAL;
++	}
++	return 0;
++}
++
++static struct class *wifi_dt_class;
++static ssize_t power_show(struct class *cls,
++			  struct class_attribute *attr,
++			  char *_buf)
++{
++	if (!_buf)
++		return -EINVAL;
++
++	return sprintf(_buf, "%s%s%s",
++		"wifi power ctrl:\n",
++		"1=power on\n",
++		"2=power down\n");
++}
++
++static ssize_t power_store(struct class *cls,
++			   struct class_attribute *attr,
++			   const char __user *buf, size_t count)
++{
++	int ret = -EINVAL;
++	unsigned char cmd = 0;
++
++	if (!buf || 0 != kstrtou8(buf, 0, &cmd))
++		return ret;
++
++	WIFI_INFO("wifi power ctrl: cmd = %d\n", (int)cmd);
++	switch (cmd) {
++	case 1:
++		pci_remove();
++		set_usb_wifi_power(0);
++		set_usb_wifi_power(1);
++		pci_reinit();
++		WIFI_INFO("set wifi power up!\n");
++		break;
++	case 2:
++		set_usb_wifi_power(0);
++		WIFI_INFO("set wifi power down!\n");
++		break;
++	default:
++		WIFI_INFO("wifi power ctrl: Invalid parameter!!!\n");
++		return ret;
++	}
++
++	return count;
++}
++static CLASS_ATTR_RW(power);
++
++static const struct file_operations wifi_power_fops = {
++	.unlocked_ioctl = wifi_power_ioctl,
++	.compat_ioctl = wifi_power_ioctl,
++	.open	= wifi_power_open,
++	.release	= wifi_power_release,
++};
++
++static struct class wifi_power_class = {
++	.name = WIFI_POWER_CLASS_NAME,
++	.owner = THIS_MODULE,
++};
++
++static int wifi_setup_dt(void)
++{
++	int ret;
++
++	WIFI_INFO("%s\n", __func__);
++	if (!wifi_info.plat_info_valid) {
++		WIFI_INFO("%s : invalid device tree setting\n", __func__);
++		return -1;
++	}
++
++	/* setup irq */
++	if (wifi_info.interrupt_pin) {
++		ret = gpio_request(wifi_info.interrupt_pin,
++				   OWNER_NAME);
++		if (ret)
++			WIFI_INFO("interrupt_pin request failed(%d)\n", ret);
++
++		ret = gpio_direction_input(wifi_info.interrupt_pin);
++		if (ret)
++			WIFI_INFO("set interrupt_pin input failed(%d)\n", ret);
++
++		wifi_info.irq_num = gpio_to_irq(wifi_info.interrupt_pin);
++		if (wifi_info.irq_num)
++			WIFI_INFO("irq num is:(%d)\n", wifi_info.irq_num);
++
++		SHOW_PIN_OWN("interrupt_pin", wifi_info.interrupt_pin);
++	}
++
++	/* setup power */
++	if (wifi_info.chip_en_pin) {
++		ret = gpio_request(wifi_info.chip_en_pin, OWNER_NAME);
++		if (ret)
++			WIFI_INFO("chip_en_pin request failed(%d)\n", ret);
++		ret = gpio_direction_output(wifi_info.chip_en_pin, 0);
++		if (ret)
++			WIFI_INFO("chip_en_pin output 0 failed(%d)\n", ret);
++		msleep(20);
++		ret = gpio_direction_output(wifi_info.chip_en_pin, 1);
++		if (ret)
++			WIFI_INFO("chip_en_pin output 1 failed(%d)\n", ret);
++		SHOW_PIN_OWN("chip_en_pin", wifi_info.chip_en_pin);
++	}
++
++	if (wifi_info.power_on_pin) {
++		ret = gpio_request(wifi_info.power_on_pin, OWNER_NAME);
++		if (ret)
++			WIFI_INFO("power_on_pin request failed(%d)\n", ret);
++		if (wifi_info.power_init_off) {
++			if (wifi_info.power_on_pin_level)
++				ret = set_power(1);
++			else
++				ret = set_power(0);
++		} else {
++			if (wifi_info.power_on_pin_level)
++				ret = set_power(0);
++			else
++				ret = set_power(1);
++		}
++		if (ret)
++			WIFI_INFO("power_on_pin output failed(%d)\n", ret);
++		SHOW_PIN_OWN("power_on_pin", wifi_info.power_on_pin);
++	}
++
++	if (wifi_info.power_on_pin2) {
++		ret = gpio_request(wifi_info.power_on_pin2,
++				   OWNER_NAME);
++		if (ret)
++			WIFI_INFO("power_on_pin2 request failed(%d)\n", ret);
++		if (wifi_info.power_on_pin_level)
++			ret = set_power2(1);
++		else
++			ret = set_power2(0);
++		if (ret)
++			WIFI_INFO("power_on_pin2 output failed(%d)\n", ret);
++		SHOW_PIN_OWN("power_on_pin2", wifi_info.power_on_pin2);
++	}
++
++	set_wifi_power(0);
++	msleep(100);
++	set_wifi_power(1);
++
++	return 0;
++}
++
++static void wifi_teardown_dt(void)
++{
++	WIFI_INFO("%s\n", __func__);
++	if (!wifi_info.plat_info_valid) {
++		WIFI_INFO("%s : invalid device tree setting\n", __func__);
++		return;
++	}
++
++	if (wifi_info.power_on_pin)
++		gpio_free(wifi_info.power_on_pin);
++
++	if (wifi_info.power_on_pin2)
++		gpio_free(wifi_info.power_on_pin2);
++
++	if (wifi_info.interrupt_pin)
++		gpio_free(wifi_info.interrupt_pin);
++}
++
++#ifdef CONFIG_AMLOGIC_PWM_32K
++/*
++ * for gxb ,m8b soc
++ * single pwm channel
++ */
++int pwm_single_channel_conf(struct wifi_plat_info *plat)
++{
++	struct pwm_device *pwm = plat->sdata.pwm;
++	struct pwm_state pstate;
++	int duty_value;
++	int ret;
++
++	/* get pwm duty_cycle property */
++	ret = of_property_read_u32(plat->dev->of_node, "duty_cycle",
++				   &duty_value);
++	if (ret) {
++		pr_err("not config pwm duty_cycle");
++		return ret;
++	}
++	/* get pwm device */
++	pwm = devm_pwm_get(plat->dev, NULL);
++	if (IS_ERR(pwm)) {
++		ret = PTR_ERR(pwm);
++		dev_err(plat->dev, "Failed to get PWM: %d\n", ret);
++		return ret;
++	}
++	/* config pwm */
++	pwm_init_state(pwm, &pstate);
++	pwm_config(pwm, duty_value, pstate.period);
++	pwm_enable(pwm);
++
++	WIFI_INFO("pwm period val=%lld, pwm duty val=%lld\n",
++		  pstate.period, pstate.duty_cycle);
++	WIFI_INFO("wifi pwm conf ok\n");
++
++	return 0;
++}
++
++int pwm_double_channel_conf_dt(struct wifi_plat_info *plat)
++{
++	phandle pwm_phandle;
++	int ret;
++	struct device_node *wifinode = plat->dev->of_node;
++	struct device_node *pnode = NULL;
++	struct device_node *child;
++
++	ret = of_property_read_u32(wifinode, "pwm_config", &pwm_phandle);
++	if (ret) {
++		pr_err("not match wifi_pwm_config node\n");
++		return -1;
++	}
++
++	pnode = of_find_node_by_phandle(pwm_phandle);
++	if (!pnode) {
++		pr_err("can't find wifi_pwm_config node\n");
++		return -1;
++	}
++
++	/*request for pwm device */
++	for_each_child_of_node(pnode, child) {
++		struct pwm_double_data *pdata =
++			&plat->ddata.pwms[plat->ddata.num_pwm];
++
++		pdata->pwm = devm_of_pwm_get(plat->dev, child, NULL);
++		if (IS_ERR(pdata->pwm)) {
++			ret = PTR_ERR(pdata->pwm);
++			dev_err(plat->dev, "unable to request PWM%d, ret = %d\n",
++				plat->ddata.num_pwm, ret);
++			return ret;
++		}
++		ret = of_property_read_u32(child, "duty-cycle",
++					   &pdata->duty_cycle);
++		if (ret) {
++			pr_err("not %d duty_cycle parameters\n",
++			       plat->ddata.num_pwm);
++			return ret;
++		}
++		ret = of_property_read_u32(child, "times",
++					   &pdata->pwm_times);
++		if (ret) {
++			pr_err("not %d pwm_times parameters\n",
++			       plat->ddata.num_pwm);
++			return ret;
++		}
++		plat->ddata.num_pwm++;
++	}
++	WIFI_INFO("wifi pwm dt ok\n");
++
++	return 0;
++}
++
++/*
++ *configuration for double pwm
++ */
++int pwm_double_channel_conf(struct wifi_plat_info *plat)
++{
++	struct pwm_double_data pwm_data1 = plat->ddata.pwms[0];
++	struct pwm_double_data pwm_data2 = plat->ddata.pwms[1];
++	struct pwm_device *pwm1 = pwm_data1.pwm;
++	struct pwm_device *pwm2 = pwm_data2.pwm;
++	struct meson_pwm *meson1 = to_meson_pwm(pwm1->chip);
++	struct meson_pwm *meson2 = to_meson_pwm(pwm2->chip);
++	struct pwm_state pstate1;
++	struct pwm_state pstate2;
++	unsigned int pwm1_duty = pwm_data1.duty_cycle;
++	unsigned int pwm1_times = pwm_data1.pwm_times;
++	unsigned int pwm2_duty = pwm_data2.duty_cycle;
++	unsigned int pwm2_times = pwm_data2.pwm_times;
++	int ret = 0;
++
++	/*init for pwm2 device*/
++	pwm_init_state(pwm1, &pstate1);
++	pwm_init_state(pwm2, &pstate2);
++
++	pwm_config(pwm1, pwm1_duty, pstate1.period);
++	pwm_config(pwm2, pwm2_duty, pstate2.period);
++
++	ret = pwm_set_times(meson1, pwm1->hwpwm, pwm1_times);
++	if (ret) {
++		pr_err("[%s][%d]wifi: pwm_set_times filed\n",
++		       __func__, __LINE__);
++		return ret;
++	}
++	ret = pwm_set_times(meson2, pwm2->hwpwm, pwm2_times);
++	if (ret) {
++		pr_err("[%s][%d]wifi: pwm_set_times filed\n",
++		       __func__, __LINE__);
++		return ret;
++	}
++	pwm_enable(pwm1);
++	pwm_enable(pwm2);
++	WIFI_INFO("wifi pwm conf ok\n");
++
++	return 0;
++}
++#endif
++
++static int wifi_dev_probe(struct platform_device *pdev)
++{
++	int ret;
++
++#ifdef CONFIG_OF
++	struct wifi_plat_info *plat;
++	const char *value;
++	//struct gpio_desc *desc;
++#else
++	struct wifi_plat_info *plat =
++	 (struct wifi_plat_info *)(pdev->dev.platform_data);
++#endif
++
++#ifdef CONFIG_OF
++	if (pdev->dev.of_node) {
++		plat = wifi_get_driver_data(pdev);
++		plat->plat_info_valid = 0;
++		plat->dev = &pdev->dev;
++
++		ret = of_property_read_string(pdev->dev.of_node,
++					      "interrupt-gpios", &value);
++		if (ret) {
++			WIFI_INFO("no interrupt pin");
++			plat->interrupt_pin = 0;
++		} else {
++			plat->interrupt_pin = of_get_named_gpio_flags
++							(pdev->dev.of_node,
++							"interrupt-gpios",
++							0, NULL);
++			ret = of_property_read_string(pdev->dev.of_node,
++						      "irq_trigger_type",
++						      &value);
++			if (ret) {
++				WIFI_INFO("no irq_trigger_type");
++				plat->irq_trigger_type = 0;
++				return -1;
++			}
++
++			if (strcmp(value, "GPIO_IRQ_HIGH") == 0) {
++				plat->irq_trigger_type = GPIO_IRQ_HIGH;
++			} else if (strcmp(value, "GPIO_IRQ_LOW") == 0) {
++				plat->irq_trigger_type = GPIO_IRQ_LOW;
++			} else if (strcmp(value, "GPIO_IRQ_RISING") == 0) {
++				plat->irq_trigger_type = GPIO_IRQ_RISING;
++			} else if (strcmp(value, "GPIO_IRQ_FALLING") == 0) {
++				plat->irq_trigger_type = GPIO_IRQ_FALLING;
++			} else {
++				WIFI_INFO("unknown irq trigger type-%s\n",
++					  value);
++				return -1;
++			}
++		}
++
++		ret = of_property_read_string(pdev->dev.of_node,
++					      "power_on-gpios", &value);
++		if (ret) {
++			WIFI_INFO("no power_on_pin");
++			plat->power_on_pin = 0;
++			plat->power_on_pin_OD = 0;
++		} else {
++			wifi_power_gpio = 1;
++			plat->power_on_pin = of_get_named_gpio_flags
++							(pdev->dev.of_node,
++							"power_on-gpios",
++							0, NULL);
++		}
++
++		ret = of_property_read_u32(pdev->dev.of_node,
++					   "power_on_pin_level",
++					   &plat->power_on_pin_level);
++
++		ret = of_property_read_u32(pdev->dev.of_node,
++					   "power_on_pin_OD",
++					   &plat->power_on_pin_OD);
++		if (ret)
++			plat->power_on_pin_OD = 0;
++		pr_info("wifi: power_on_pin_OD = %d;\n", plat->power_on_pin_OD);
++		ret = of_property_read_string(pdev->dev.of_node,
++					      "power_on_2-gpios", &value);
++		if (ret) {
++			WIFI_INFO("no power_on_pin2");
++			plat->power_on_pin2 = 0;
++		} else {
++			wifi_power_gpio2 = 1;
++			plat->power_on_pin2 = of_get_named_gpio_flags
++							(pdev->dev.of_node,
++							"power_on_2-gpios",
++							0, NULL);
++		}
++
++		ret = of_property_read_string(pdev->dev.of_node,
++					      "chip_en-gpios", &value);
++		if (ret) {
++			WIFI_INFO("no chip_en_pin");
++			plat->chip_en_pin = 0;
++		} else {
++			plat->chip_en_pin = of_get_named_gpio_flags
++							(pdev->dev.of_node,
++							"chip_en-gpios",
++							0, NULL);
++		}
++
++#ifdef CONFIG_AMLOGIC_PWM_32K
++		if (!of_get_property(pdev->dev.of_node, "disable-wifi-32k", NULL)) {
++			if (of_get_property(pdev->dev.of_node, "single_pwm", NULL)) {
++				WIFI_INFO("use single channel\n");
++				ret = pwm_single_channel_conf(plat);
++				if (ret)
++					pr_err("pwm config err\n");
++			} else {
++				WIFI_INFO("use double channel\n");
++				ret = pwm_double_channel_conf_dt(plat);
++				if (!ret)
++					pwm_double_channel_conf(plat);
++				else if (ret == -EPROBE_DEFER)
++					goto out;
++			}
++		}
++#endif
++		if (of_get_property(pdev->dev.of_node,
++				    "dhd_static_buf", NULL)) {
++			WIFI_INFO("dhd_static_buf all setup\n");
++			bcmdhd_init_wlan_mem(1);
++		} else {
++			WIFI_INFO("dhd_static_buf little setup\n");
++			bcmdhd_init_wlan_mem(0);
++		}
++
++		plat->plat_info_valid = 1;
++
++		WIFI_INFO("interrupt_pin=%d\n", plat->interrupt_pin);
++		WIFI_INFO("irq_num=%d, irq_trigger_type=%d\n",
++			  plat->irq_num, plat->irq_trigger_type);
++		WIFI_INFO("power_on_pin=%d\n", plat->power_on_pin);
++		WIFI_INFO("clock_32k_pin=%d\n", plat->clock_32k_pin);
++	}
++#endif
++	ret = alloc_chrdev_region(&wifi_power_devno,
++				  0, 1, WIFI_POWER_DRIVER_NAME);
++	if (ret < 0) {
++		ret = -ENODEV;
++		goto out;
++	}
++	ret = class_register(&wifi_power_class);
++	if (ret < 0)
++		goto error1;
++	wifi_power_cdev = cdev_alloc();
++	if (!wifi_power_cdev)
++		goto error2;
++	cdev_init(wifi_power_cdev, &wifi_power_fops);
++	wifi_power_cdev->owner = THIS_MODULE;
++	ret = cdev_add(wifi_power_cdev, wifi_power_devno, 1);
++	if (ret)
++		goto error3;
++	devp = device_create(&wifi_power_class, NULL,
++			     wifi_power_devno, NULL, WIFI_POWER_DEVICE_NAME);
++	if (IS_ERR(devp)) {
++		ret = PTR_ERR(devp);
++		goto error3;
++	}
++	devp->platform_data = pdata;
++
++	wifi_setup_dt();
++
++	wifi_dt_class = class_create(THIS_MODULE, "aml_wifi");
++	ret = class_create_file(wifi_dt_class, &class_attr_power);
++
++	return 0;
++error3:
++	cdev_del(wifi_power_cdev);
++error2:
++	class_unregister(&wifi_power_class);
++error1:
++	unregister_chrdev_region(wifi_power_devno, 1);
++out:
++	return ret;
++}
++
++static int wifi_dev_remove(struct platform_device *pdev)
++{
++	WIFI_INFO("%s\n", __func__);
++	wifi_teardown_dt();
++	return 0;
++}
++
++static struct platform_driver wifi_plat_driver = {
++	.probe = wifi_dev_probe,
++	.remove = wifi_dev_remove,
++	.driver = {
++	.name = "aml_wifi",
++	.owner = THIS_MODULE,
++	.of_match_table = wifi_match
++	},
++};
++
++static int __init wifi_dt_init(void)
++{
++	int ret;
++
++	ret = platform_driver_register(&wifi_plat_driver);
++	return ret;
++}
++
++/* module_init(wifi_dt_init); */
++fs_initcall_sync(wifi_dt_init);
++
++static void __exit wifi_dt_exit(void)
++{
++	platform_driver_unregister(&wifi_plat_driver);
++}
++module_exit(wifi_dt_exit);
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("AMLOGIC");
++MODULE_DESCRIPTION("wifi device tree driver");
++
++/**************** wifi mac *****************/
++u8 WIFI_MAC[] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
++char wifi_mac[32] = {0};
++char *wifimac;
++#ifdef MODULE
++module_param(wifimac, charp, 0644);
++#else
++core_param(wifimac, wifimac, charp, 0644);
++#endif
++static unsigned char chartonum(char c)
++{
++	if (c >= '0' && c <= '9')
++		return c - '0';
++	if (c >= 'A' && c <= 'F')
++		return (c - 'A') + 10;
++	if (c >= 'a' && c <= 'f')
++		return (c - 'a') + 10;
++	return 0;
++}
++
++static int mac_addr_set(char *line)
++{
++	unsigned char mac[6];
++	int i = 0;
++
++	WIFI_INFO("try to wifi mac from emmc key!\n");
++	for (i = 0; i < 6 && line[0] != '\0' && line[1] != '\0'; i++) {
++		mac[i] = chartonum(line[0]) << 4 | chartonum(line[1]);
++		line += 3;
++	}
++	memcpy(WIFI_MAC, mac, 6);
++	snprintf(wifi_mac, sizeof(wifi_mac),
++		 "%02x:%02x:%02x:%02x:%02x:%02x",
++		 WIFI_MAC[0], WIFI_MAC[1], WIFI_MAC[2],
++		 WIFI_MAC[3], WIFI_MAC[4], WIFI_MAC[5]);
++	wifimac = (char *)wifi_mac;
++	WIFI_INFO("uboot setup mac-addr: %x:%x:%x:%x:%x:%x\n",
++		  WIFI_MAC[0], WIFI_MAC[1], WIFI_MAC[2],
++		  WIFI_MAC[3], WIFI_MAC[4], WIFI_MAC[5]);
++
++	return 1;
++}
++
++#ifdef MODULE
++static char *mac_addr = "";
++
++static int set_mac_addr(const char *val, const struct kernel_param *kp)
++{
++	param_set_charp(val, kp);
++
++	return mac_addr_set(mac_addr);
++}
++
++static const struct kernel_param_ops mac_addr_ops = {
++	.set = set_mac_addr,
++	.get = param_get_charp,
++};
++
++module_param_cb(mac_addr, &mac_addr_ops, &mac_addr, 0644);
++MODULE_PARM_DESC(mac_addr, "mac addr");
++#else
++__setup("mac_wifi=", mac_addr_set);
++#endif
++
++u8 *wifi_get_mac(void)
++{
++	return WIFI_MAC;
++}
++EXPORT_SYMBOL(wifi_get_mac);
++
++void extern_wifi_set_enable(int is_on)
++{
++	if (is_on) {
++		set_wifi_power(1);
++		WIFI_INFO("WIFI  Enable! %d\n", wifi_info.power_on_pin);
++	} else {
++		set_wifi_power(0);
++		WIFI_INFO("WIFI  Disable! %d\n", wifi_info.power_on_pin);
++	}
++}
++EXPORT_SYMBOL(extern_wifi_set_enable);
++
++int wifi_irq_num(void)
++{
++	return wifi_info.irq_num;
++}
++EXPORT_SYMBOL(wifi_irq_num);
++
++int wifi_irq_trigger_level(void)
++{
++	return wifi_info.irq_trigger_type;
++}
++EXPORT_SYMBOL(wifi_irq_trigger_level);
++MODULE_DESCRIPTION("Amlogic S912/wifi driver");
++MODULE_AUTHOR("Kevin Hilman <khilman@baylibre.com>");
++MODULE_LICENSE("GPL");
+diff --git a/include/dt-bindings/pwm/meson.h b/include/dt-bindings/pwm/meson.h
+new file mode 100644
+index 000000000000..3e3a10ec9bf3
+--- /dev/null
++++ b/include/dt-bindings/pwm/meson.h
+@@ -0,0 +1,30 @@
++/* SPDX-License-Identifier: (GPL-2.0+ OR MIT) */
++/*
++ * Copyright (c) 2019 Amlogic, Inc. All rights reserved.
++ */
++
++#ifndef _DT_BINDINGS_PWM_MESON_H
++#define _DT_BINDINGS_PWM_MESON_H
++
++/*defination for meson pwm channel index
++ *	for example:
++ *	1.there are four pwm controllers for axg:
++ *	pwm A/B ,pwm C/D, pwm AOA/AOB, pwm AOC/AOD.
++ *	each controller has four pwm channels:
++ *	MESON_PWM_0,MESON_PWM_1,MESON_PWM_2,MESON_PWM_3
++ *	when double pwm channels used, pwm channel
++ *	[ MESON_PWM_0 and MESON_PWM_2 ],
++ *	[ MESON_PWM_1 and MESON_PWM_3 ],
++ *	should be used together.
++ *
++ *	2.there are two three pwm controllers for m8b:
++ *	pwm A/B,pwm C/D,pwm E/F.
++ *	each controllere has two pwm channels:
++ *	MESON_PWM_0 and MESON_PWM_1.
++ */
++#define		MESON_PWM_0  0
++#define		MESON_PWM_1  1
++#define		MESON_PWM_2  2
++#define		MESON_PWM_3  3
++
++#endif
+diff --git a/include/linux/amlogic/aml_gpio_consumer.h b/include/linux/amlogic/aml_gpio_consumer.h
+new file mode 100644
+index 000000000000..ec1b4c255ccc
+--- /dev/null
++++ b/include/linux/amlogic/aml_gpio_consumer.h
+@@ -0,0 +1,43 @@
++/* SPDX-License-Identifier: (GPL-2.0+ OR MIT) */
++/*
++ * Copyright (c) 2019 Amlogic, Inc. All rights reserved.
++ */
++
++#include <linux/gpio.h>
++#ifndef __AML_GPIO_CONSUMER_H__
++#define __AML_GPIO_CONSUMER_H__
++#include <linux/gpio/consumer.h>
++#include <linux/of_gpio.h>
++#define AML_GPIO_IRQ(irq_bank, filter, type) \
++(((irq_bank) & 0x7 | (filter) & 0x7) << 8 | (type & 0x3) << 16)
++
++enum {
++	GPIO_IRQ0 = 0,
++	GPIO_IRQ1,
++	GPIO_IRQ2,
++	GPIO_IRQ3,
++	GPIO_IRQ4,
++	GPIO_IRQ5,
++	GPIO_IRQ6,
++	GPIO_IRQ7,
++};
++
++enum {
++	GPIO_IRQ_HIGH = 0,
++	GPIO_IRQ_LOW,
++	GPIO_IRQ_RISING,
++	GPIO_IRQ_FALLING,
++};
++
++enum {
++	FILTER_NUM0 = 0,
++	FILTER_NUM1,
++	FILTER_NUM2,
++	FILTER_NUM3,
++	FILTER_NUM4,
++	FILTER_NUM5,
++	FILTER_NUM6,
++	FILTER_NUM7,
++};
++
++#endif
+diff --git a/include/linux/amlogic/bt_device.h b/include/linux/amlogic/bt_device.h
+new file mode 100644
+index 000000000000..8b3eabf5dd50
+--- /dev/null
++++ b/include/linux/amlogic/bt_device.h
+@@ -0,0 +1,26 @@
++/* SPDX-License-Identifier: (GPL-2.0+ OR MIT) */
++/*
++ * Copyright (c) 2019 Amlogic, Inc. All rights reserved.
++ */
++
++#ifndef __PLAT_MESON_BT_DEVICE_H
++#define __PLAT_MESON_BT_DEVICE_H
++
++struct bt_dev_data {
++	int gpio_reset;
++	int gpio_en;
++	int gpio_hostwake;
++	int gpio_btwakeup;
++	int power_low_level;
++	int power_on_pin_OD;
++	int power_off_flag;
++	int power_down_disable;
++	int irqno_wakeup;
++	struct work_struct btwakeup_work;
++	struct input_dev *input_dev;
++	struct hrtimer timer;
++};
++
++int sdio_get_vendor(void);
++
++#endif
+diff --git a/include/linux/amlogic/cpu_version.h b/include/linux/amlogic/cpu_version.h
+new file mode 100644
+index 000000000000..a0e3f6be50ce
+--- /dev/null
++++ b/include/linux/amlogic/cpu_version.h
+@@ -0,0 +1,5 @@
++/* SPDX-License-Identifier: (GPL-2.0+ OR MIT) */
++/*
++ * Copyright (c) 2019 Amlogic, Inc. All rights reserved.
++ */
++#include <linux/amlogic/media/registers/cpu_version.h>
+diff --git a/include/linux/amlogic/dhd_buf.h b/include/linux/amlogic/dhd_buf.h
+new file mode 100644
+index 000000000000..8b6ab9c74324
+--- /dev/null
++++ b/include/linux/amlogic/dhd_buf.h
+@@ -0,0 +1,9 @@
++/* SPDX-License-Identifier: (GPL-2.0+ OR MIT) */
++/*
++ * Copyright (c) 2019 Amlogic, Inc. All rights reserved.
++ */
++
++#ifndef _BCMDHD_BUF_H
++#define _BCMDHD_BUF_H
++int bcmdhd_init_wlan_mem(unsigned int all_buf);
++#endif
+diff --git a/include/linux/amlogic/iomap.h b/include/linux/amlogic/iomap.h
+new file mode 100644
+index 000000000000..25634df9bf39
+--- /dev/null
++++ b/include/linux/amlogic/iomap.h
+@@ -0,0 +1,78 @@
++/* SPDX-License-Identifier: (GPL-2.0+ OR MIT) */
++/*
++ * include/linux/amlogic/iomap.h
++ *
++ * Copyright (C) 2017 Amlogic, Inc. All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or modify
++ * it under the terms of the GNU General Public License as published by
++ * the Free Software Foundation; either version 2 of the License, or
++ * (at your option) any later version.
++ *
++ * This program is distributed in the hope that it will be useful, but WITHOUT
++ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
++ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
++ * more details.
++ *
++ */
++
++#ifndef __SOC_IO_H
++#define __SOC_IO_H
++
++#include <linux/amlogic/media/registers/register_map.h>
++#include <linux/io.h>
++
++/* vpp simple io */
++static inline int aml_read_vcbus_s(unsigned int reg)
++{
++	return readl((vpp_base + (reg << 2)));
++}
++
++static inline void aml_write_vcbus_s(unsigned int reg, unsigned int val)
++{
++	writel(val, (vpp_base + (reg << 2)));
++}
++
++static inline void aml_vcbus_update_bits_s(unsigned int reg,
++					   unsigned int value,
++					   unsigned int start,
++					   unsigned int len)
++{
++	unsigned int tmp, orig;
++	unsigned int mask = (((1L << len) - 1) << start);
++	int r = (reg << 2);
++
++	orig =  readl((vpp_base + r));
++	tmp = orig  & ~mask;
++	tmp |= (value << start) & mask;
++	writel(tmp, (vpp_base + r));
++}
++
++/* hiu simple io */
++static inline int aml_read_hiubus_s(unsigned int reg)
++{
++	return readl((hiu_base + (reg << 2)));
++}
++
++static inline void aml_write_hiubus_s(unsigned int reg,
++				      unsigned int val)
++{
++	writel(val, (hiu_base + (reg << 2)));
++}
++
++static inline void aml_hiubus_update_bits_s(unsigned int reg,
++					    unsigned int value,
++					    unsigned int start,
++					    unsigned int len)
++{
++	unsigned int tmp, orig;
++	unsigned int mask = (((1L << len) - 1) << start);
++	int r = (reg << 2);
++
++	orig =  readl((hiu_base + r));
++	tmp = orig  & ~mask;
++	tmp |= (value << start) & mask;
++	writel(tmp, (hiu_base + r));
++}
++
++#endif
+diff --git a/include/linux/amlogic/media/registers/cpu_version.h b/include/linux/amlogic/media/registers/cpu_version.h
+new file mode 100644
+index 000000000000..ab4d95ccc516
+--- /dev/null
++++ b/include/linux/amlogic/media/registers/cpu_version.h
+@@ -0,0 +1,293 @@
++/* SPDX-License-Identifier: (GPL-2.0+ OR MIT) */
++/*
++ * Copyright (c) 2019 Amlogic, Inc. All rights reserved.
++ */
++
++#ifndef __REGISTERS_MESON_CPU_H
++#define __REGISTERS_MESON_CPU_H
++
++#define MESON_CPU_TYPE_MESON1		0x10
++#define MESON_CPU_TYPE_MESON2		0x20
++#define MESON_CPU_TYPE_MESON3		0x30
++#define MESON_CPU_TYPE_MESON6		0x60
++#define MESON_CPU_TYPE_MESON6TV		0x70
++#define MESON_CPU_TYPE_MESON6TVD	0x75
++#define MESON_CPU_TYPE_MESON8		0x80
++#define MESON_CPU_TYPE_MESON8B		0x8B
++#define MESON_CPU_TYPE_MESONG9TV	0x90
++
++/*
++ *	Read back value for P_ASSIST_HW_REV
++ *
++ *	Please note: M8M2 readback value same as M8 (0x19)
++ *			     We changed it to 0x1D in software,
++ *			     Please ALWAYS use get_meson_cpu_version()
++ *			     to get the version of Meson CPU
++ */
++#define MESON_CPU_MAJOR_ID_M6		0x16
++#define MESON_CPU_MAJOR_ID_M6TV		0x17
++#define MESON_CPU_MAJOR_ID_M6TVL	0x18
++#define MESON_CPU_MAJOR_ID_M8		0x19
++#define MESON_CPU_MAJOR_ID_MTVD		0x1A
++#define MESON_CPU_MAJOR_ID_MG9TV	0x1C
++#define MESON_CPU_MAJOR_ID_M8M2		0x1D
++
++#define MESON_CPU_VERSION_LVL_PACK	2
++
++enum meson_cpuid_type_e {
++	MESON_CPU_MAJOR_ID_M8B = 0x1B,
++	MESON_CPU_MAJOR_ID_GXBB = 0x1F,
++	MESON_CPU_MAJOR_ID_GXTVBB,
++	MESON_CPU_MAJOR_ID_GXL,
++	MESON_CPU_MAJOR_ID_GXM,
++	MESON_CPU_MAJOR_ID_TXL,
++	MESON_CPU_MAJOR_ID_TXLX,
++	MESON_CPU_MAJOR_ID_AXG,
++	MESON_CPU_MAJOR_ID_GXLX,
++	MESON_CPU_MAJOR_ID_TXHD,
++	MESON_CPU_MAJOR_ID_G12A,
++	MESON_CPU_MAJOR_ID_G12B,
++	MESON_CPU_MAJOR_ID_SM1 = 0x2B,
++	MESON_CPU_MAJOR_ID_TL1 = 0x2E,
++	MESON_CPU_MAJOR_ID_TM2,
++	MESON_CPU_MAJOR_ID_C1,
++	MESON_CPU_MAJOR_ID_SC2 = 0x32,
++	MESON_CPU_MAJOR_ID_T5 = 0x34,
++	MESON_CPU_MAJOR_ID_T5D = 0x35,
++	MESON_CPU_MAJOR_ID_T7 = 0x36,
++	MESON_CPU_MAJOR_ID_S4 = 0x37,
++	MESON_CPU_MAJOR_ID_T3 = 0x38,
++	MESON_CPU_MAJOR_ID_S4D = 0x3a,
++	MESON_CPU_MAJOR_ID_UNKNOWN,
++};
++
++#define MESON_CPU_VERSION_LVL_MAJOR	0
++#define MESON_CPU_VERSION_LVL_MINOR	1
++#define MESON_CPU_VERSION_LVL_PACK	2
++#define MESON_CPU_VERSION_LVL_MISC	3
++#define MESON_CPU_VERSION_LVL_MAX	MESON_CPU_VERSION_LVL_MISC
++
++struct codecio_device_data_s {
++	enum meson_cpuid_type_e cpu_id;
++};
++
++int meson_cpu_version_init(void);
++int get_cpu_type_from_media(void);
++
++unsigned char get_meson_cpu_version(int level);
++
++static inline int get_cpu_type(void)
++{
++	int cpu_id_from_media = 0;
++
++	cpu_id_from_media = get_cpu_type_from_media();
++	if (cpu_id_from_media)
++		return cpu_id_from_media;
++	return get_meson_cpu_version(MESON_CPU_VERSION_LVL_MAJOR);
++}
++
++static inline u32 get_cpu_package(void)
++{
++	unsigned int pk;
++
++	pk = get_meson_cpu_version(MESON_CPU_VERSION_LVL_PACK) & 0xF0;
++	return pk;
++}
++
++static inline bool package_id_is(unsigned int id)
++{
++	return get_cpu_package() == id;
++}
++
++static inline bool is_meson_m8_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_M8;
++}
++
++static inline bool is_meson_mtvd_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_MTVD;
++}
++
++static inline bool is_meson_m8m2_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_M8M2;
++}
++
++static inline bool is_meson_g9tv_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_MG9TV;
++}
++
++/* new added*/
++static inline bool is_meson_m8b_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_M8B;
++}
++
++static inline bool is_meson_gxbb_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_GXBB;
++}
++
++static inline bool is_meson_gxtvbb_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_GXTVBB;
++}
++
++static inline bool is_meson_gxl_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_GXL;
++}
++
++static inline bool is_meson_gxl_package_905D(void)
++{
++	return is_meson_gxl_cpu() && package_id_is(0x0);
++}
++
++static inline bool is_meson_gxl_package_905X(void)
++{
++	return is_meson_gxl_cpu() && package_id_is(0x80);
++}
++
++static inline bool is_meson_gxl_package_905L(void)
++{
++	return is_meson_gxl_cpu() && package_id_is(0xc0);
++}
++
++static inline bool is_meson_gxl_package_905M2(void)
++{
++	return is_meson_gxl_cpu() && package_id_is(0xe0);
++}
++
++static inline bool is_meson_gxl_package_805X(void)
++{
++	return is_meson_gxl_cpu() && package_id_is(0x30);
++}
++
++static inline bool is_meson_gxl_package_805Y(void)
++{
++	return is_meson_gxl_cpu() && package_id_is(0xb0);
++}
++
++static inline bool is_meson_gxm_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_GXM;
++}
++
++static inline bool is_meson_txl_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_TXL;
++}
++
++static inline bool is_meson_txlx_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_TXLX;
++}
++
++static inline bool is_meson_axg_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_AXG;
++}
++
++static inline bool is_meson_gxlx_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_GXLX;
++}
++
++static inline bool is_meson_txhd_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_TXHD;
++}
++
++static inline bool is_meson_g12a_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_G12A;
++}
++
++static inline bool is_meson_g12b_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_G12B;
++}
++
++static inline bool is_meson_sm1_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_SM1;
++}
++
++static inline bool is_meson_tl1_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_TL1;
++}
++
++static inline bool is_meson_tm2_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_TM2;
++}
++
++static inline bool is_meson_sc2_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_SC2;
++}
++
++static inline bool is_meson_t5_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_T5;
++}
++
++static inline bool is_meson_t5d_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_T5D;
++}
++
++static inline bool is_meson_t7_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_T7;
++}
++
++static inline bool is_meson_s4_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_S4;
++}
++
++static inline bool is_meson_t3_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_T3;
++}
++
++static inline bool is_meson_s4d_cpu(void)
++{
++	return get_cpu_type() == MESON_CPU_MAJOR_ID_S4D;
++}
++
++static inline bool cpu_after_eq(unsigned int id)
++{
++	return get_cpu_type() >= id;
++}
++
++static inline bool is_meson_txlx_package_962X(void)
++{
++	return is_meson_txlx_cpu() && package_id_is(0x10);
++}
++
++static inline bool is_meson_txlx_package_962E(void)
++{
++	return is_meson_txlx_cpu() && package_id_is(0x20);
++}
++
++static inline bool is_meson_rev_a(void)
++{
++	return (get_meson_cpu_version(MESON_CPU_VERSION_LVL_MINOR) == 0xA);
++}
++
++static inline bool is_meson_rev_b(void)
++{
++	return (get_meson_cpu_version(MESON_CPU_VERSION_LVL_MINOR) == 0xB);
++}
++
++static inline bool is_meson_rev_c(void)
++{
++	return (get_meson_cpu_version(MESON_CPU_VERSION_LVL_MINOR) == 0xC);
++}
++
++#endif
+diff --git a/include/linux/amlogic/media/registers/register_map.h b/include/linux/amlogic/media/registers/register_map.h
+new file mode 100644
+index 000000000000..ab48f90cd15a
+--- /dev/null
++++ b/include/linux/amlogic/media/registers/register_map.h
+@@ -0,0 +1,105 @@
++/* SPDX-License-Identifier: (GPL-2.0+ OR MIT) */
++/*
++ * Copyright (c) 2019 Amlogic, Inc. All rights reserved.
++ */
++
++#ifndef CODECIO_REGISTER_MAP_H
++#define CODECIO_REGISTER_MAP_H
++
++#include <linux/io.h>
++
++enum {
++	CODECIO_CBUS_BASE = 0,
++	CODECIO_DOSBUS_BASE,
++	CODECIO_HIUBUS_BASE,
++	CODECIO_AOBUS_BASE,
++	CODECIO_VCBUS_BASE,
++	CODECIO_DMCBUS_BASE,
++	CODECIO_EFUSE_BASE,
++	CODECIO_BUS_MAX,
++};
++
++extern void __iomem *vpp_base;
++extern void __iomem *hiu_base;
++extern uint codecio_reg_start[CODECIO_BUS_MAX];
++
++int codecio_read_cbus(unsigned int reg);
++void codecio_write_cbus(unsigned int reg, unsigned int val);
++int codecio_read_dosbus(unsigned int reg);
++void codecio_write_dosbus(unsigned int reg, unsigned int val);
++int codecio_read_hiubus(unsigned int reg);
++void codecio_write_hiubus(unsigned int reg, unsigned int val);
++int codecio_read_aobus(unsigned int reg);
++void codecio_write_aobus(unsigned int reg, unsigned int val);
++int codecio_read_vcbus(unsigned int reg);
++void codecio_write_vcbus(unsigned int reg, unsigned int val);
++int codecio_read_dmcbus(unsigned int reg);
++void codecio_write_dmcbus(unsigned int reg, unsigned int val);
++int codecio_read_parsbus(unsigned int reg);
++void codecio_write_parsbus(unsigned int reg, unsigned int val);
++int codecio_read_aiubus(unsigned int reg);
++void codecio_write_aiubus(unsigned int reg, unsigned int val);
++int codecio_read_demuxbus(unsigned int reg);
++void codecio_write_demuxbus(unsigned int reg, unsigned int val);
++int codecio_read_resetbus(unsigned int reg);
++void codecio_write_resetbus(unsigned int reg, unsigned int val);
++int codecio_read_efusebus(unsigned int reg);
++void codecio_write_efusebus(unsigned int reg, unsigned int val);
++
++int aml_reg_read(u32 bus_type, unsigned int reg, unsigned int *val);
++int aml_reg_write(u32 bus_type, unsigned int reg, unsigned int val);
++int aml_regmap_update_bits(u32 bus_type,
++			   unsigned int reg,
++			   unsigned int mask,
++			   unsigned int val);
++/*
++ ** CBUS REG Read Write and Update some bits
++ */
++int aml_read_cbus(unsigned int reg);
++void aml_write_cbus(unsigned int reg, unsigned int val);
++void aml_cbus_update_bits(unsigned int reg,
++			  unsigned int mask,
++			  unsigned int val);
++/*
++ ** AO REG Read Write and Update some bits
++ */
++int aml_read_aobus(unsigned int reg);
++void aml_write_aobus(unsigned int reg, unsigned int val);
++void aml_aobus_update_bits(unsigned int reg,
++			   unsigned int mask,
++			   unsigned int val);
++/*
++ ** VCBUS Bus REG Read Write and Update some bits
++ */
++int aml_read_vcbus(unsigned int reg);
++void aml_write_vcbus(unsigned int reg, unsigned int val);
++void aml_vcbus_update_bits(unsigned int reg,
++			   unsigned int mask,
++			   unsigned int val);
++/*
++ ** DOS BUS Bus REG Read Write and Update some bits
++ */
++int aml_read_dosbus(unsigned int reg);
++void aml_write_dosbus(unsigned int reg, unsigned int val);
++void aml_dosbus_update_bits(unsigned int reg,
++			    unsigned int mask, unsigned int val);
++int  aml_read_sec_reg(unsigned int reg);
++void  aml_write_sec_reg(unsigned int reg, unsigned int val);
++
++/*
++ ** HIUBUS REG Read Write and Update some bits
++ */
++int aml_read_hiubus(unsigned int reg);
++void aml_write_hiubus(unsigned int reg, unsigned int val);
++void aml_hiubus_update_bits(unsigned int reg,
++			    unsigned int mask, unsigned int val);
++
++/*
++ ** DMCBUS REG Read Write and Update some bits
++ */
++int aml_read_dmcbus(unsigned int reg);
++void aml_write_dmcbus(unsigned int reg, unsigned int val);
++void aml_dmcbus_update_bits(unsigned int reg,
++			    unsigned int mask, unsigned int val);
++
++#endif
+diff --git a/include/linux/amlogic/pm.h b/include/linux/amlogic/pm.h
+new file mode 100644
+index 000000000000..457880a36cc8
+--- /dev/null
++++ b/include/linux/amlogic/pm.h
+@@ -0,0 +1,79 @@
++/* SPDX-License-Identifier: (GPL-2.0+ OR MIT) */
++/*
++ * Copyright (c) 2019 Amlogic, Inc. All rights reserved.
++ */
++
++#ifndef __AML_PM_H__
++#define __AML_PM_H__
++#include <linux/notifier.h>
++
++/* wake up reason*/
++#define	UDEFINED_WAKEUP		0
++#define	CHARGING_WAKEUP		1
++#define	REMOTE_WAKEUP		2
++#define	RTC_WAKEUP		3
++#define	BT_WAKEUP		4
++#define	WIFI_WAKEUP		5
++#define	POWER_KEY_WAKEUP	6
++#define	AUTO_WAKEUP		7
++#define	CEC_WAKEUP		8
++#define	REMOTE_CUS_WAKEUP	9
++#define ETH_PHY_WAKEUP		10
++#define	CECB_WAKEUP	11
++#define	ETH_PHY_GPIO	12
++#define	VAD_WAKEUP	13
++unsigned int get_resume_method(void);
++unsigned int get_resume_reason(void);
++unsigned int is_pm_s2idle_mode(void);
++
++#ifdef CONFIG_AMLOGIC_LEGACY_EARLY_SUSPEND
++enum {
++	EARLY_SUSPEND_LEVEL_BLANK_SCREEN = 50,
++	EARLY_SUSPEND_LEVEL_STOP_DRAWING = 100,
++	EARLY_SUSPEND_LEVEL_DISABLE_FB = 150,
++};
++
++struct early_suspend {
++	struct list_head link;
++	int level;
++	void (*suspend)(struct early_suspend *h);
++	void (*resume)(struct early_suspend *h);
++	void *param;
++};
++
++void register_early_suspend(struct early_suspend *handler);
++void unregister_early_suspend(struct early_suspend *handler);
++unsigned int lgcy_early_suspend_init(struct platform_device *pdev);
++
++#endif //CONFIG_AMLOGIC_LEGACY_EARLY_SUSPEND
++
++#ifdef CONFIG_AMLOGIC_M8B_SUSPEND
++/*l2c virtual addr*/
++#define IO_PL310_BASE 0xfe000000
++
++/*IR, power key, low power,
++ *adapter plug in/out and so on,
++ *are all use this flag.
++ */
++#define FLAG_WAKEUP_PWRKEY		0x1234abcd
++#define FLAG_WAKEUP_ALARM		0x12345678
++#define FLAG_WAKEUP_WIFI		0x12340001
++#define FLAG_WAKEUP_BT			0x12340002
++#define FLAG_WAKEUP_PWROFF		0x12340003
++
++/*AOBUS*/
++#define AO_RTI_STATUS_REG2 0x0008
++#define AO_RTC_ADDR0 0x0740
++#define AO_RTC_ADDR1 0x0744
++#define AO_RTC_ADDR2 0x0748
++#define AO_RTC_ADDR3 0x074c
++#define AO_UART_STATUS 0x04cc
++#define AO_UART_REG5   0x04d4
++
++/*CBUS*/
++#define HHI_SYS_PLL_CNTL  0x10c0
++#define HHI_MPEG_CLK_CNTL 0x105d
++
++#endif //CONFIG_AMLOGIC_M8B_SUSPEND
++
++#endif //__AML_PM_H__
+diff --git a/include/linux/amlogic/pwm-meson.h b/include/linux/amlogic/pwm-meson.h
+new file mode 100644
+index 000000000000..598b655ee1ac
+--- /dev/null
++++ b/include/linux/amlogic/pwm-meson.h
+@@ -0,0 +1,152 @@
++/* SPDX-License-Identifier: (GPL-2.0+ OR MIT) */
++/*
++ * Copyright (c) 2019 Amlogic, Inc. All rights reserved.
++ */
++
++#ifndef _PWM_MESON_H
++#define _PWM_MESON_H
++
++#include <linux/bitops.h>
++#include <linux/export.h>
++#include <linux/io.h>
++#include <linux/mutex.h>
++#include <linux/spinlock.h>
++#include <linux/mutex.h>
++#include <linux/time.h>
++#include <linux/of_address.h>
++#include <linux/clk-provider.h>
++#include <linux/regmap.h>
++/* for pwm channel index*/
++#include <dt-bindings/pwm/meson.h>
++
++#define MESON_NUM_PWMS		2
++#define MESON_DOUBLE_NUM_PWMS	4
++#define DEFAULT_EXTERN_CLK	24000000
++
++
++/*a group pwm registers offset address
++ * for example:
++ * PWM A B
++ * PWM C D
++ * PWM E F
++ * PWM AO A
++ * PWM AO B
++ */
++#define REG_PWM_A				0x0
++#define REG_PWM_B				0x4
++#define REG_MISC_AB				0x8
++#define REG_DS_AB				0xc
++#define REG_TIME_AB				0x10
++#define REG_PWM_A2				0x14
++#define REG_PWM_B2				0x18
++#define REG_BLINK_AB				0x1c
++
++#define PWM_LOW_MASK				GENMASK(15, 0)
++#define PWM_HIGH_MASK				GENMASK(31, 16)
++
++/* pwm output enable */
++#define MISC_A_EN				BIT(0)
++#define MISC_B_EN				BIT(1)
++#define MISC_A2_EN				BIT(25)
++#define MISC_B2_EN				BIT(24)
++/* pwm polarity enable */
++#define MISC_A_INVERT				BIT(26)
++#define MISC_B_INVERT				BIT(27)
++/* when you want 0% or 100% waveform
++ * constant bit should be set.
++ */
++#define MISC_A_CONSTANT				BIT(28)
++#define MISC_B_CONSTANT				BIT(29)
++/*
++ * pwm a and b clock enable/disable
++ */
++#define MISC_A_CLK_EN				BIT(15)
++#define MISC_B_CLK_EN				BIT(23)
++/*
++ * blink control bit
++ */
++#define BLINK_A					BIT(8)
++#define BLINK_B					BIT(9)
++
++#define PWM_HIGH_SHIFT				16
++#define MISC_CLK_DIV_MASK			0x7f
++#define MISC_B_CLK_DIV_SHIFT			16
++#define MISC_A_CLK_DIV_SHIFT			8
++#define MISC_B_CLK_SEL_SHIFT			6
++#define MISC_A_CLK_SEL_SHIFT			4
++#define MISC_CLK_SEL_WIDTH			2
++#define PWM_CHANNELS_PER_GROUP			2
++#define PWM_DISABLE				0
++#define MISC_CLK_SEL_MASK			0x3
++
++static const unsigned int mux_reg_shifts[] = {
++	MISC_A_CLK_SEL_SHIFT,
++	MISC_B_CLK_SEL_SHIFT,
++	MISC_A_CLK_SEL_SHIFT,
++	MISC_B_CLK_SEL_SHIFT
++};
++
++/*pwm register att*/
++struct meson_pwm_variant {
++	unsigned int times;
++	unsigned int constant;
++	unsigned int blink_enable;
++	unsigned int blink_times;
++};
++
++/*for soc data:
++ *double channel enable
++ * double_channel = false ,could use PWM A
++ * double_channel = true , could use PWM A and PWM A2
++ * extern_clk = false , clk div, gate, mux in pwm controller
++ * extern_clk = true , clk div, gate, mux in clktree
++ */
++struct meson_pwm_data {
++	char **parent_names;
++	unsigned int num_parents;
++	unsigned int double_channel;
++	unsigned int extern_clk;
++};
++
++struct meson_pwm_channel {
++	unsigned int hi;
++	unsigned int lo;
++#ifdef CONFIG_AMLOGIC_MODIFY
++	unsigned int clk_rate;
++#endif
++	u8 pre_div;
++
++	struct clk *clk_parent;
++	struct clk_mux mux;
++	struct clk *clk;
++};
++
++struct meson_pwm {
++	struct pwm_chip chip;
++	struct meson_pwm_data *data;
++	struct meson_pwm_channel channels[MESON_DOUBLE_NUM_PWMS];
++	struct meson_pwm_variant variant;
++	void __iomem *base;
++	/*
++	 * Protects register (write) access to the REG_MISC_AB register
++	 * that is shared between the two PWMs.
++	 */
++	spinlock_t lock;
++	struct regmap *regmap_base;
++};
++
++/*the functions only use for meson pwm driver*/
++int meson_pwm_sysfs_init(struct device *dev);
++void meson_pwm_sysfs_exit(struct device *dev);
++
++/*the functions use for special function in meson pwm driver*/
++int pwm_register_debug(struct meson_pwm *meson);
++struct meson_pwm *to_meson_pwm(struct pwm_chip *chip);
++int pwm_constant_enable(struct meson_pwm *meson, int index);
++int pwm_constant_disable(struct meson_pwm *meson, int index);
++int pwm_blink_enable(struct meson_pwm *meson, int index);
++int pwm_blink_disable(struct meson_pwm *meson, int index);
++int pwm_set_blink_times(struct meson_pwm *meson, int index, int value);
++int pwm_set_times(struct meson_pwm *meson, int index, int value);
++#endif   /* _PWM_MESON_H_ */
++
+diff --git a/include/linux/amlogic/wifi_dt.h b/include/linux/amlogic/wifi_dt.h
+new file mode 100644
+index 000000000000..daffbd763f88
+--- /dev/null
++++ b/include/linux/amlogic/wifi_dt.h
+@@ -0,0 +1,27 @@
++/* SPDX-License-Identifier: (GPL-2.0+ OR MIT) */
++/*
++ * Copyright (c) 2019 Amlogic, Inc. All rights reserved.
++ */
++
++#ifndef _wifi_dt_h_
++#define _wifi_dt_h_
++
++void sdio_reinit(void);
++char *get_wifi_inf(void);
++
++void extern_wifi_set_enable(int is_on);
++int wifi_irq_num(void);
++void set_usb_bt_power(int is_power);
++
++#ifdef CONFIG_PCI
++/*amlogic 4.9 kernel support pci interface wifi*/
++void pci_lock_rescan_remove(void);
++struct pci_bus *pci_find_next_bus(const struct pci_bus *from);
++unsigned int pci_rescan_bus(struct pci_bus *bus);
++void pci_unlock_rescan_remove(void);
++struct pci_dev *pci_get_device(unsigned int vendor, unsigned int device,
++			       struct pci_dev *from);
++void pci_stop_and_remove_bus_device_locked(struct pci_dev *dev);
++#endif
++
++#endif /* _wifi_dt_h_ */
+-- 
+2.30.2
+
