@@ -1,0 +1,29 @@
+From 871ff8e8b05ea213cab84ddab6d908880908ddc3 Mon Sep 17 00:00:00 2001
+From: Vyacheslav Bocharov <adeep@lexina.in>
+Date: Thu, 29 Sep 2022 16:54:45 +0300
+Subject: [PATCH 52/54] Fix indent
+
+---
+ drivers/net/wireless/w1/vmac/w1_sdio/w1_sdio.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/net/wireless/w1/vmac/w1_sdio/w1_sdio.c b/drivers/net/wireless/w1/vmac/w1_sdio/w1_sdio.c
+index eb341de9b125..b1ebfbf2e286 100644
+--- a/drivers/net/wireless/w1/vmac/w1_sdio/w1_sdio.c
++++ b/drivers/net/wireless/w1/vmac/w1_sdio/w1_sdio.c
+@@ -1322,10 +1322,10 @@ int  aml_w1_sdio_init(void)
+     wifi_in_insmod = 0;
+     wifi_in_rmmod = 0;
+     PRINT("*****************aml sdio common driver is insmoded********************\n");
+-    if (err)
++    if (err) 
+         PRINT("failed to register sdio driver: %d \n", err);
+ 
+-        return err;
++    return err;
+ }
+ EXPORT_SYMBOL(aml_w1_sdio_init);
+ 
+-- 
+2.30.2
+

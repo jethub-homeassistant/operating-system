@@ -1,0 +1,49 @@
+From 751edf6ca736dc934398739a344ffb05077123d7 Mon Sep 17 00:00:00 2001
+From: Vyacheslav Bocharov <adeep@lexina.in>
+Date: Thu, 29 Sep 2022 19:53:32 +0300
+Subject: [PATCH 53/54] Fix includes
+
+---
+ .../net/wireless/w1/vmac/crypto/aml_crypto_wrap.h    |  2 +-
+ drivers/net/wireless/w1/vmac/w1_sdio/w1_sdio.c       | 12 ++++++------
+ 2 files changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/drivers/net/wireless/w1/vmac/crypto/aml_crypto_wrap.h b/drivers/net/wireless/w1/vmac/crypto/aml_crypto_wrap.h
+index 4f0477e22cfc..c232a7ebadcf 100644
+--- a/drivers/net/wireless/w1/vmac/crypto/aml_crypto_wrap.h
++++ b/drivers/net/wireless/w1/vmac/crypto/aml_crypto_wrap.h
+@@ -3,7 +3,7 @@
+ 
+ #include <linux/types.h>
+ #include <linux/kernel.h>
+-#include "wifi_mac_com.h"
++#include "../wifi_mac_com.h"
+ 
+ #define TEST_FAIL() 0
+ 
+diff --git a/drivers/net/wireless/w1/vmac/w1_sdio/w1_sdio.c b/drivers/net/wireless/w1/vmac/w1_sdio/w1_sdio.c
+index b1ebfbf2e286..f3e1954cdf9a 100644
+--- a/drivers/net/wireless/w1/vmac/w1_sdio/w1_sdio.c
++++ b/drivers/net/wireless/w1/vmac/w1_sdio/w1_sdio.c
+@@ -1,12 +1,12 @@
+ #include "w1_sdio.h"
+ #include <linux/mutex.h>
+ 
+-#include "chip_pmu_reg.h"
+-#include "chip_intf_reg.h"
+-#include "wifi_intf_addr.h"
+-#include "wifi_drv_reg_ops.h"
+-#include "rf_d_top_reg.h"
+-#include "wifi_coex_addr.h"
++#include "../chip_pmu_reg.h"
++#include "../chip_intf_reg.h"
++#include "../wifi_intf_addr.h"
++#include "../wifi_drv_reg_ops.h"
++#include "../rf_d_top_reg.h"
++#include "../wifi_coex_addr.h"
+ 
+ struct amlw1_hwif_sdio g_w1_hwif_sdio;
+ struct amlw1_hif_ops g_w1_hif_ops;
+-- 
+2.30.2
+
