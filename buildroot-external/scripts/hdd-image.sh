@@ -16,6 +16,7 @@ KERNEL_SIZE=24M
 OVERLAY_SIZE=96M
 DATA_SIZE=1280M
 
+. "${SCRIPT_DIR}/burn.sh"
 
 function size2sectors() {
     local f=0
@@ -101,6 +102,8 @@ function create_disk_image() {
 
     if [ "${BOOT_SYS}" == "mbr" ]; then
         _create_disk_mbr
+        # support for create AmLogic burnable images
+        [[ -f "${BINARIES_DIR}/platform.conf" ]] && _create_disk_burn
     else
         _create_disk_gpt
     fi
