@@ -1,20 +1,20 @@
-From e04ccda602c00ce16c11f976df26278c7ca61fb6 Mon Sep 17 00:00:00 2001
-From: Vyacheslav Bocharov <adeep@lexina.in>
-Date: Thu, 1 Sep 2022 09:53:19 +0300
-Subject: [PATCH 6/6] Disable efi options for JetHub D1
+From f6317d84bf21c385054d065f381e66e72e70d9ba Mon Sep 17 00:00:00 2001
+From: Viacheslav Bocharov <adeep@lexina.in>
+Date: Fri, 16 Dec 2022 09:57:08 +0300
+Subject: [PATCH 09/11] Disable EFI for J80
 
 ---
- configs/jethub_j100_defconfig | 19 +++++++++++++++++++
+ configs/jethub_j80_defconfig | 19 +++++++++++++++++++
  1 file changed, 19 insertions(+)
 
-diff --git a/configs/jethub_j100_defconfig b/configs/jethub_j100_defconfig
-index 08131b517d..78f5f7b123 100644
---- a/configs/jethub_j100_defconfig
-+++ b/configs/jethub_j100_defconfig
-@@ -77,3 +77,22 @@ CONFIG_SECURE_STORAGE=y
- CONFIG_AML_STORAGE=y
+diff --git a/configs/jethub_j80_defconfig b/configs/jethub_j80_defconfig
+index 43d0c62b50..611dc73186 100644
+--- a/configs/jethub_j80_defconfig
++++ b/configs/jethub_j80_defconfig
+@@ -77,3 +77,22 @@ CONFIG_AML_STORAGE=y
  CONFIG_EFUSE=y
  CONFIG_AML_PARTITION=y
+ 
 +
 +CONFIG_BOOTMETH_EFILOADER=n
 +CONFIG_CMD_BOOTEFI=n
@@ -35,5 +35,5 @@ index 08131b517d..78f5f7b123 100644
 +CONFIG_EFI_RNG_PROTOCOL=n
 +CONFIG_EFI_LOAD_FILE2_INITRD=n
 -- 
-2.30.2
+2.34.1
 

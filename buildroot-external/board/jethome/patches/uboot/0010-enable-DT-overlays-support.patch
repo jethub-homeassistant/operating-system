@@ -1,0 +1,25 @@
+From b149842d0b13bb2de02ab288037041a698197ecd Mon Sep 17 00:00:00 2001
+From: Viacheslav Bocharov <adeep@lexina.in>
+Date: Fri, 16 Dec 2022 09:57:30 +0300
+Subject: [PATCH 10/11] enable-DT-overlays-support
+
+---
+ arch/arm/Kconfig | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
+index 9898c7d68e..2ee416844e 100644
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -850,6 +850,8 @@ config ARCH_OMAP2PLUS
+ config ARCH_MESON
+ 	bool "Amlogic Meson"
+ 	select GPIO_EXTRA_HEADER
++	select OF_LIBFDT
++	select OF_LIBFDT_OVERLAY
+ 	imply DISTRO_DEFAULTS
+ 	imply DM_RNG
+ 	help
+-- 
+2.34.1
+

@@ -1,8 +1,8 @@
-From ba4875aa434f5507c9ef3a71e069e818a9eedee2 Mon Sep 17 00:00:00 2001
+From 419044b698e7a0d0243c16df332d922a5b43e4be Mon Sep 17 00:00:00 2001
 From: Vyacheslav Bocharov <adeep@lexina.in>
 Date: Wed, 29 Jun 2022 09:26:35 +0300
-Subject: [PATCH 3/6] Copy and update amlogic-2019 aml partition/keyman code to
- mainline
+Subject: [PATCH 04/11] Copy and update amlogic-2019 aml partition/keyman code
+ to mainline
 
 ---
  .../meson-axg-jethome-jethub-j100-u-boot.dtsi |    92 +
@@ -64192,5 +64192,5 @@ index 6f604e7315..1f7495b97e 100644
   * Type string for U-Boot bootable partitions
   */
 -- 
-2.30.2
+2.34.1
 

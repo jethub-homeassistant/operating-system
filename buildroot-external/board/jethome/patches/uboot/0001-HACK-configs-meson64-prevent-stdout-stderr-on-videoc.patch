@@ -1,7 +1,7 @@
-From f787d690c64550e9b4e1cebb19298e4fd89176d5 Mon Sep 17 00:00:00 2001
+From 191fda5120a59730777b9e94c367c20ac137a7ab Mon Sep 17 00:00:00 2001
 From: Christian Hewitt <christianshewitt@gmail.com>
 Date: Fri, 13 Nov 2020 02:09:36 +0000
-Subject: [CHEWITT] HACK: configs: meson64: prevent stdout/stderr on
+Subject: [PATCH 01/11] HACK: configs: meson64: prevent stdout/stderr on
  videoconsole
 
 Several devices have CONFIG_DM_VIDEO enabled which causes stdout/stderr
@@ -9,9 +9,12 @@ to appear on videoconsole, so remove videoconsole from STDOUT so that
 early u-boot boot remains silent unless using the uart/serial console.
 
 Signed-off-by: Christian Hewitt <christianshewitt@gmail.com>
+---
+ include/configs/meson64.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/include/configs/meson64.h b/include/configs/meson64.h
-index 17ebccd2c4..6224722941 100644
+index 196e58ed9a..3b8b079e2a 100644
 --- a/include/configs/meson64.h
 +++ b/include/configs/meson64.h
 @@ -18,7 +18,7 @@
@@ -24,5 +27,5 @@ index 17ebccd2c4..6224722941 100644
  #define STDOUT_CFG "serial"
  #endif
 -- 
-2.33.0
+2.34.1
 
