@@ -1,0 +1,14 @@
+[
+  {
+    "id": "jethub-j100",
+    "defconfig": "jethub_j100",
+    "runner": "aarch64-runner",
+    "label": "board/jethub"
+  },
+  {
+    "id": "jethub-j80",
+    "defconfig": "jethub_j80",
+    "runner": "aarch64-runner",
+    "label": "board/jethub"
+  }
+]
