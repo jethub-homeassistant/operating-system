@@ -1,4 +1,4 @@
-BOARD_ID=jethub-j80
+BOARD_ID=jethub-h1
 BOARD_NAME="JetHome JetHub H1 (j80)"
 CHASSIS=embedded
 BOOTLOADER=uboot
