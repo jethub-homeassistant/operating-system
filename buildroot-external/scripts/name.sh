@@ -1,5 +1,25 @@
 #!/bin/bash
 
+function jhos_image_name() {
+    echo "${BINARIES_DIR}/${JHOS_ID}_${BOARD_ID}-$(jhos_version).${1}"
+}
+
+function jhos_image_name_burn() {
+    echo "${BINARIES_DIR}/${JHOS_ID}_${BOARD_ID}-$(jhos_version)_burn.${1}"
+}
+
+function jhos_rauc_compatible() {
+    echo "${JHOS_ID}-${BOARD_ID}"
+}
+
+function jhos_version() {
+    if [ -z "${VERSION_DEV}" ]; then
+        echo "${VERSION_MAJOR}.${VERSION_BUILD}"
+    else
+        echo "${VERSION_MAJOR}.${VERSION_BUILD}.${VERSION_DEV}"
+    fi
+}
+
 function hassos_image_name() {
     echo "${BINARIES_DIR}/${HASSOS_ID}_${BOARD_ID}-$(hassos_version).${1}"
 }
