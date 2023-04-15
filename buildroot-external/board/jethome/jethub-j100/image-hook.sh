@@ -1,7 +1,7 @@
 #!/bin/bash
 # shellcheck disable=SC2155
 
-function jhos_pre_image() {
+function hassos_pre_image() {
     local BOOT_DATA="$(path_boot_dir)"
     local UBOOT="${BINARIES_DIR}/u-boot.bin.sd.bin"
     local SPL_IMG="$(path_spl_img)"
