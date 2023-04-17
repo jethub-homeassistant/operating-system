@@ -5,8 +5,8 @@
 
 function _create_disk_burn() {
     local hdd_ext=${1:-img}
-    local hdd_img="$(jhos_image_name "${hdd_ext}")"
-    local hdd_img_burn="$(jhos_image_name_burn "${hdd_ext}")"
+    local hdd_img="$(hassos_image_name "${hdd_ext}")"
+    local hdd_img_burn="$(hassos_image_name_burn "${hdd_ext}")"
 
     local boot_img="$(path_boot_img)"
     local rootfs_img="$(path_rootfs_img)"
@@ -150,7 +150,7 @@ function _create_dtb_file () {
 
 function convert_disk_image_burn_zip() {
     local hdd_ext=${1:-img}
-    local hdd_img_burn="$(jhos_image_name_burn "${hdd_ext}")"
+    local hdd_img_burn="$(hassos_image_name_burn "${hdd_ext}")"
 
     rm -f "${hdd_img_burn}.zip"
     zip -j -m -q -r "${hdd_img_burn}.zip" "${hdd_img_burn}"
