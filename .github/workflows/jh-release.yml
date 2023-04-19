@@ -88,8 +88,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ github.workspace }}/release/haos_${{ matrix.board.id }}-${{ needs.validate_release.outputs.version }}.img.xz
-          asset_name: haos_${{ matrix.board.id }}-${{ needs.validate_release.outputs.version }}.img.xz
+          asset_path: ${{ github.workspace }}/release/haos_${{ matrix.board.name }}-${{ needs.validate_release.outputs.version }}.img.xz
+          asset_name: haos_${{ matrix.board.name }}-${{ needs.validate_release.outputs.version }}.img.xz
+          asset_content_type: application/x-xz
+
+      - name: Upload burn disk image
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ${{ github.workspace }}/release/haos_${{ matrix.board.name }}-${{ needs.validate_release.outputs.version }}_burn.img.zip
+          asset_name: haos_${{ matrix.board.name }}-${{ needs.validate_release.outputs.version }}_burn.img.zip
           asset_content_type: application/x-xz
 
       - name: Upload rauc update
@@ -98,8 +108,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ github.workspace }}/release/haos_${{ matrix.board.id }}-${{ needs.validate_release.outputs.version }}.raucb
-          asset_name: haos_${{ matrix.board.id }}-${{ needs.validate_release.outputs.version }}.raucb
+          asset_path: ${{ github.workspace }}/release/haos_${{ matrix.board.name }}-${{ needs.validate_release.outputs.version }}.raucb
+          asset_name: haos_${{ matrix.board.name }}-${{ needs.validate_release.outputs.version }}.raucb
           asset_content_type: application/octet-stream
 
   bump_version:

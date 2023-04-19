@@ -1,6 +1,7 @@
 [
   {
     "id": "jethub-j100",
+    "name": "jethub-d1",
     "defconfig": "jethub_j100",
     "runner": "amd64",
     "label": "board/jethub",
@@ -8,6 +9,7 @@
   },
   {
     "id": "jethub-j80",
+    "name": "jethub-h1",
     "defconfig": "jethub_j80",
     "runner": "amd64",
     "label": "board/jethub",
