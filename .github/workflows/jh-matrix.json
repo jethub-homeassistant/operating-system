@@ -3,12 +3,14 @@
     "id": "jethub-j100",
     "defconfig": "jethub_j100",
     "runner": "amd64",
-    "label": "board/jethub"
+    "label": "board/jethub",
+    "supported": "d1,d1p"
   },
   {
     "id": "jethub-j80",
     "defconfig": "jethub_j80",
     "runner": "amd64",
-    "label": "board/jethub"
+    "label": "board/jethub",
+    "supported": "h1"
   }
 ]
