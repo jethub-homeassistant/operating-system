@@ -27,14 +27,14 @@ setenv bootargs_hassos "zram.enabled=1 zram.num_devices=3 net.naming-scheme=v250
 
 # Load board vars
 
-if test -n "${board_name}"; then setenv bootargs_jhos "${bootargs_jhos} board=${board}"; fi
+if test -n "${board_name}"; then setenv bootargs_hassos "${bootargs_hassos} board=${board}"; fi
 
-if test -n "${ethaddr}"; then setenv bootargs_jhos "${bootargs_jhos} mac=${ethaddr}";
-else if test -n "${mac}"; then setenv bootargs_jhos "${bootargs_jhos} mac=${mac}" ; fi
+if test -n "${ethaddr}"; then setenv bootargs_hassos "${bootargs_hassos} mac=${ethaddr}";
+else if test -n "${mac}"; then setenv bootargs_hassos "${bootargs_hassos} mac=${mac}" ; fi
 fi
 
-if test -n "${serial}"; then setenv bootargs_jhos "${bootargs_jhos} serial=${serial}"; fi
-if test -n "${usid}"; then setenv bootargs_jhos "${bootargs_jhos} usid=${usid}"; fi
+if test -n "${serial}"; then setenv bootargs_hassos "${bootargs_hassos} serial=${serial}"; fi
+if test -n "${usid}"; then setenv bootargs_hassos "${bootargs_hassos} usid=${usid}"; fi
 
 # JHOS system A/B
 setenv bootargs_a "root=PARTUUID=48617373-06 rootfstype=squashfs ro rootwait"
@@ -102,7 +102,7 @@ for BOOT_SLOT in "${BOOT_ORDER}"; do
       setexpr BOOT_A_LEFT ${BOOT_A_LEFT} - 1
       echo "Trying to boot slot A, ${BOOT_A_LEFT} attempts remaining. Loading kernel ..."
       if load ${devtype} ${devnum}:5 ${kernel_addr_r} Image; then
-          setenv bootargs "${bootargs_jhos} ${bootargs_a} rauc.slot=A ${cmdline}"
+          setenv bootargs "${bootargs_hassos} ${bootargs_a} rauc.slot=A ${cmdline}"
       fi
     fi
   elif test "x${BOOT_SLOT}" = "xB"; then
@@ -110,7 +110,7 @@ for BOOT_SLOT in "${BOOT_ORDER}"; do
       setexpr BOOT_B_LEFT ${BOOT_B_LEFT} - 1
       echo "Trying to boot slot B, ${BOOT_B_LEFT} attempts remaining. Loading kernel ..."
       if load ${devtype} ${devnum}:7 ${kernel_addr_r} Image; then
-          setenv bootargs "${bootargs_jhos} ${bootargs_b} rauc.slot=B ${cmdline}"
+          setenv bootargs "${bootargs_hassos} ${bootargs_b} rauc.slot=B ${cmdline}"
       fi
     fi
   fi
