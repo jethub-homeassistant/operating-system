@@ -1,17 +1,17 @@
 [
   {
-    "id": "jethub-j100",
+    "id": "jethub-d1",
     "name": "jethub-d1",
     "defconfig": "jethub_j100",
-    "runner": "amd64",
+    "runner": "self-hosted",
     "label": "board/jethub",
     "supported": "d1,d1p"
   },
   {
-    "id": "jethub-j80",
+    "id": "jethub-h1",
     "name": "jethub-h1",
     "defconfig": "jethub_j80",
-    "runner": "amd64",
+    "runner": "self-hosted",
     "label": "board/jethub",
     "supported": "h1"
   }
