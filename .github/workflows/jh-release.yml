@@ -120,14 +120,14 @@ jobs:
 
     steps:
     - name: Initialize git
-      uses: jethubjhaos/actions/helpers/git-init@master-jethub
+      uses: jethub-homeassistant/actions/helpers/git-init@master-jethub
       with:
         name: ${{ secrets.GIT_NAME }}
         email: ${{ secrets.GIT_EMAIL }}
         token: ${{ secrets.GIT_TOKEN }}
 
     - name: Bump Home Assistant OS beta version
-      uses: jethubjhaos/actions/helpers/version-push@master-jethub
+      uses: jethub-homeassistant/actions/helpers/version-push@master-jethub
       with:
         key: "hassos[]"
         key-description: "Home Assistant OS"
