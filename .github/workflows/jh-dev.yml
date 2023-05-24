@@ -1,0 +1,143 @@
+# Home Assistant Operating System build workflow
+
+name: JH Development build
+
+on:
+  workflow_dispatch:
+  pull_request_target:
+    types: [opened,synchronize,labeled]
+
+jobs:
+  prepare:
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run-dev-build') }}
+    name: Prepare build
+    runs-on: [ "ubuntu-20.04" ]
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      version_main: ${{ steps.version_main.outputs.version_main }}
+      version_dev: ${{ steps.version_dev.outputs.version_dev }}${{ steps.version_pr.outputs.version_pr }}
+      matrix: ${{ steps.generate_matrix.outputs.result }}
+    steps:
+      - name: Generate Development build version
+        shell: bash
+        id: version_dev
+        run: |
+          version_dev="dev$(date --utc +'%Y%m%d')"
+          echo "Development version \"${version_dev}\""
+          echo "version_dev=${version_dev}" >> $GITHUB_OUTPUT
+      - name: Generate Development build version for PR
+        if: ${{ github.event.pull_request }}
+        shell: bash
+        id: version_pr
+        run: |
+          version_pr=$(printf "%05d" ${{ github.event.pull_request.number }})
+          echo "Development build for PR #${{ github.event.pull_request.number }}"
+          echo "version_pr=${version_pr}" >> $GITHUB_OUTPUT
+      - uses: actions/checkout@v3
+      - name: Get Major/Minor version
+        id: version_main
+        run: |
+          major=$(cat ${GITHUB_WORKSPACE}/buildroot-external/meta | grep VERSION_MAJOR | cut -d'=' -f2)
+          build=$(cat ${GITHUB_WORKSPACE}/buildroot-external/meta | grep VERSION_BUILD | cut -d'=' -f2)
+          echo "version_main=${major}.${build}" >> $GITHUB_OUTPUT
+      - name: Create build matrix
+        uses: actions/github-script@v6
+        id: generate_matrix
+        with:
+          script: |
+            const boards = require('./.github/workflows/jh-matrix.json')
+
+            if (context.eventName == "workflow_dispatch") {
+              console.log("Run full build for all boards")
+              return { "board": boards }
+            }
+
+            const labels = context.payload.pull_request.labels.map(l => l.name)
+            const labelsSet = new Set(labels)
+            const buildBoards = boards.filter(b => labelsSet.has(b.label))
+
+            return { "board": buildBoards }
+
+  build:
+    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run-dev-build') }}
+    name: Development build for ${{ matrix.board.id }}
+    environment: "dev_build"
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
+    runs-on: ${{ matrix.board.runner }}
+
+    steps:
+      - name: Define git reference
+        uses: actions/github-script@v6
+        id: generate_gitref
+        with:
+          script: |
+            if (context.eventName == "workflow_dispatch")
+              return { "ref": context.ref }
+            return { "ref": context.payload.pull_request.head.sha }
+
+      - name: Checkout source
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+          persist-credentials: false
+          ref: ${{ fromJSON(steps.generate_gitref.outputs.result).ref }}
+
+      - name: Build container
+        run: docker build -t haos-builder .
+
+      - name: 'Add release PKI certs'
+        env:
+          RAUC_CERTIFICATE: ${{ secrets.RAUC_CERTIFICATE }}
+          RAUC_PRIVATE_KEY: ${{ secrets.RAUC_PRIVATE_KEY }}
+        run: |
+          echo -e "-----BEGIN CERTIFICATE-----\n${RAUC_CERTIFICATE}\n-----END CERTIFICATE-----" > cert.pem
+          echo -e "-----BEGIN PRIVATE KEY-----\n${RAUC_PRIVATE_KEY}\n-----END PRIVATE KEY-----" > key.pem
+
+      - name: Build
+        run: |
+          BUILDER_UID="$(id -u)"
+          BUILDER_GID="$(id -g)"
+          docker run --rm --privileged -v "${GITHUB_WORKSPACE}:/build" \
+            -e BUILDER_UID="${BUILDER_UID}" -e BUILDER_GID="${BUILDER_GID}" \
+            -v "${{ matrix.board.runner }}-build-cache:/cache" \
+            -v "/build/output" \
+            haos-builder make BUILDDIR=/build VERSION_DEV=${{ needs.prepare.outputs.version_dev }} ${{ matrix.board.defconfig }}
+
+      - name: Upload images
+        uses: burnett01/rsync-deployments@5.2
+        with:
+          rsh: -q
+          switches: -aW
+          path: release/
+          remote_path: ${{ secrets.DEV_TARGET_PATH }}/${{ needs.prepare.outputs.version_main }}.${{ needs.prepare.outputs.version_dev }}/
+          remote_host: ${{ secrets.DEV_HOST }}
+          remote_port: ${{ secrets.DEV_PORT }}
+          remote_user: ${{ secrets.DEV_USERNAME }}
+          remote_key: ${{ secrets.DEV_SSH_KEY }}
+
+  bump_version:
+    name: Bump dev channel version
+    if: ${{ github.event_name == 'workflow_dispatch' }}
+    needs: [ build, prepare ]
+    runs-on: [ "ubuntu-20.04" ]
+
+    steps:
+    - name: Initialize git
+      uses: jethub-homeassistant/actions/helpers/git-init@master-jethub
+      with:
+        name: ${{ secrets.GIT_NAME }}
+        email: ${{ secrets.GIT_EMAIL }}
+        token: ${{ secrets.GIT_TOKEN }}
+
+    - name: Bump Home Assistant OS dev channel version to ${{ needs.prepare.outputs.version_main }}.${{ needs.prepare.outputs.version_dev }}
+      uses: jethub-homeassistant/actions/helpers/version-push@master-jethub
+      with:
+        key: "hassos[]"
+        key-description: "Home Assistant OS"
+        version: ${{ needs.prepare.outputs.version_main }}.${{ needs.prepare.outputs.version_dev }}
+        channel: "dev"
