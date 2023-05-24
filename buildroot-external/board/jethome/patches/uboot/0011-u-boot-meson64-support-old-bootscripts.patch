@@ -1,0 +1,32 @@
+From ba35ffd1e7d44a1d772f81d8a38fba3973b2ee7a Mon Sep 17 00:00:00 2001
+From: Viacheslav Bocharov <adeep@lexina.in>
+Date: Fri, 16 Dec 2022 09:58:13 +0300
+Subject: [PATCH 11/11] u-boot-meson64-support-old-bootscripts
+
+---
+ include/configs/meson64.h | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/include/configs/meson64.h b/include/configs/meson64.h
+index 3b8b079e2a..ccae01d881 100644
+--- a/include/configs/meson64.h
++++ b/include/configs/meson64.h
+@@ -89,11 +89,15 @@
+ 	"kernel_comp_addr_r=0x0d080000\0" \
+ 	"kernel_comp_size=0x2000000\0" \
+ 	"fdt_addr_r=0x08008000\0" \
++	"dtb_mem_addr=0x01000000\0" \
+ 	"scriptaddr=0x08000000\0" \
+ 	"kernel_addr_r=0x08080000\0" \
+ 	"pxefile_addr_r=0x01080000\0" \
++	"loadaddr=0x01080000\0" \
+ 	"fdtoverlay_addr_r=0x01000000\0" \
+ 	"ramdisk_addr_r=0x13000000\0" \
++	"initrd_start=0x13000000\0" \
++	"bloader=ext4load mmc 0:1\0" \
+ 	"fdtfile=amlogic/" CONFIG_DEFAULT_DEVICE_TREE ".dtb\0" \
+ 	BOOTENV
+ #endif
+-- 
+2.34.1
+
