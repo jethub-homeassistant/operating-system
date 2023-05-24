@@ -14,8 +14,9 @@ BOOTSTATE_SIZE=8M
 SYSTEM_SIZE=256M
 KERNEL_SIZE=24M
 OVERLAY_SIZE=96M
-DATA_SIZE=1280M
+DATA_SIZE=6000M
 
+. "${SCRIPT_DIR}/burn.sh"
 
 function size2sectors() {
     local f=0
@@ -101,6 +102,8 @@ function create_disk_image() {
 
     if [ "${BOOT_SYS}" == "mbr" ]; then
         _create_disk_mbr
+        # support for create AmLogic burnable images
+        [[ -f "${BINARIES_DIR}/platform.conf" ]] && _create_disk_burn
     else
         _create_disk_gpt
     fi
@@ -197,7 +200,7 @@ function _create_disk_mbr() {
     local data_img="$(path_data_img)"
     local kernel_img="$(path_kernel_img)"
     local hdd_img="$(hassos_image_name img)"
-    local hdd_count=${DISK_SIZE:-2}
+    local hdd_count=${DISK_SIZE:-7}
     local disk_layout="${BINARIES_DIR}/disk.layout"
 
     # All boards with MBR disk layout have SPL
