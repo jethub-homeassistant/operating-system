@@ -9,7 +9,7 @@ on:
 
 jobs:
   prepare:
-    if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run-dev-build') }}
+    if: 0 #${{ github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run-dev-build') }}
     name: Prepare build
     runs-on: [ "ubuntu-20.04" ]
     permissions:
