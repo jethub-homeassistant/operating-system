@@ -8,6 +8,7 @@ on:
 
 jobs:
   validate_release:
+    if: 0 # disable old releases
     name: Validate release
     runs-on: [ "ubuntu-20.04" ]
     outputs:
