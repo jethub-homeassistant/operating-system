@@ -16,7 +16,9 @@ HASSIO_CONTAINER_IMAGES_ARCH = supervisor dns audio cli multicast observer core
 define HASSIO_CONFIGURE_CMDS
 	# Deploy only landing page for "core" by setting version to "landingpage"
 	#curl -s $(HASSIO_VERSION_URL) | jq '.core = "landingpage"' > $(@D)/stable.json
-	curl -s $(HASSIO_VERSION_URL) | jq '.core = "latest"' > $(@D)/stable.json
+	#curl -s $(HASSIO_VERSION_URL) | jq '.core = "latest"' > $(@D)/stable.json
+	curl -s $(HASSIO_VERSION_URL) > $(@D)/stable.json
+	$(BR2_EXTERNAL_HASSOS_PATH)/package/hassio/prepare-json.sh $(@D)/stable.json
 
 	$(Q)mkdir -p $(@D)/images
 	$(Q)mkdir -p $(HASSIO_DL_DIR)
