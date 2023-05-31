@@ -1,7 +1,7 @@
-From 47f9de7db190c7b6dce8e52d6eb955299d9ab3c2 Mon Sep 17 00:00:00 2001
+From 24526525f53d835fd9fa219897f5f44639378e0c Mon Sep 17 00:00:00 2001
 From: Vyacheslav Bocharov <adeep@lexina.in>
 Date: Sun, 3 Jul 2022 15:24:11 +0300
-Subject: [PATCH 06/11] cmd: fix do_adc_single()
+Subject: [PATCH 07/12] cmd: fix do_adc_single()
 
 The source code contains an error:
 - argv[2] contains <channel> arg, variable for env_set is in argv[3]

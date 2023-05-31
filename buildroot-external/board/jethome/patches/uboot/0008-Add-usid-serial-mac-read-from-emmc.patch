@@ -1,7 +1,7 @@
-From 6af62f82f064a7fd693a20dddf39648f925f154c Mon Sep 17 00:00:00 2001
+From 481a41b442d4a29094856f4b8d5a43d985ac8cdf Mon Sep 17 00:00:00 2001
 From: Vyacheslav Bocharov <adeep@lexina.in>
 Date: Tue, 5 Jul 2022 19:06:25 +0300
-Subject: [PATCH 07/11] Add usid/serial/mac read from emmc
+Subject: [PATCH 08/12] Add usid/serial/mac read from emmc
 
 ---
  board/amlogic/jethub-j100/jethub-j100.c | 63 +++++++++++++++++++++++--
