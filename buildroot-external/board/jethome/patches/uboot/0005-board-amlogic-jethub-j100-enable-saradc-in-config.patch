@@ -1,7 +1,7 @@
-From f8916f2bbdb027bd8e0a0a71b5e5dc61f0541eb3 Mon Sep 17 00:00:00 2001
+From fe9e6c5e8d47435543e9f948d7ab58da9eb10480 Mon Sep 17 00:00:00 2001
 From: Vyacheslav Bocharov <adeep@lexina.in>
 Date: Wed, 20 Apr 2022 20:35:00 +0300
-Subject: [PATCH 03/11] board: amlogic: jethub j100: enable saradc in config
+Subject: [PATCH 05/12] board: amlogic: jethub j100: enable saradc in config
 
 Enable ADC in board config file
 

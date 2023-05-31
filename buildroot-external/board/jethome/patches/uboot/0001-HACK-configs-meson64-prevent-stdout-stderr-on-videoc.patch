@@ -1,7 +1,7 @@
-From 191fda5120a59730777b9e94c367c20ac137a7ab Mon Sep 17 00:00:00 2001
+From c9b4def74edd7a49dc7f6c8fd7f2d8427b1a233d Mon Sep 17 00:00:00 2001
 From: Christian Hewitt <christianshewitt@gmail.com>
 Date: Fri, 13 Nov 2020 02:09:36 +0000
-Subject: [PATCH 01/11] HACK: configs: meson64: prevent stdout/stderr on
+Subject: [PATCH 01/12] HACK: configs: meson64: prevent stdout/stderr on
  videoconsole
 
 Several devices have CONFIG_DM_VIDEO enabled which causes stdout/stderr
