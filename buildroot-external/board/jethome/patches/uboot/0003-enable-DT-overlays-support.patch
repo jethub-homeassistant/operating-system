@@ -1,7 +1,7 @@
-From b149842d0b13bb2de02ab288037041a698197ecd Mon Sep 17 00:00:00 2001
-From: Viacheslav Bocharov <adeep@lexina.in>
-Date: Fri, 16 Dec 2022 09:57:30 +0300
-Subject: [PATCH 10/11] enable-DT-overlays-support
+From 2866d7c2509d1d83c749231c9d60b174cfa7d841 Mon Sep 17 00:00:00 2001
+From: Vyacheslav Bocharov <adeep@lexina.in>
+Date: Wed, 31 May 2023 14:35:47 +0300
+Subject: [PATCH 03/12] enable DT overlays support
 
 ---
  arch/arm/Kconfig | 2 ++
