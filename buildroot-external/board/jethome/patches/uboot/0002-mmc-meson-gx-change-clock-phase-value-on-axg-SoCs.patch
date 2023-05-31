@@ -1,7 +1,7 @@
-From 46eeec9f341f381d6ae65088ec1e8e1c53664696 Mon Sep 17 00:00:00 2001
+From 128cac0a207af8b2088244b6001bfe59ae0fa495 Mon Sep 17 00:00:00 2001
 From: Vyacheslav Bocharov <adeep@lexina.in>
 Date: Thu, 2 Dec 2021 13:10:24 +0300
-Subject: [PATCH 05/11] mmc: meson-gx: change clock phase value on axg SoCs
+Subject: [PATCH 02/12] mmc: meson-gx: change clock phase value on axg SoCs
 
 Amlogic AXG SoCs seems doesn't work over 50MHz. When phase sets to 270',
 it's working fine over 50MHz on Amlogic AXG SoCs.
@@ -15,7 +15,7 @@ To distinguish which value is used adds an u-boot only axg compatible.
  2 files changed, 4 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/mmc/meson_gx_mmc.c b/drivers/mmc/meson_gx_mmc.c
-index 6ded4b619b..5e32c386ca 100644
+index fcf4f03d1e..718eae42ec 100644
 --- a/drivers/mmc/meson_gx_mmc.c
 +++ b/drivers/mmc/meson_gx_mmc.c
 @@ -68,7 +68,8 @@ static void meson_mmc_config_clock(struct mmc *mmc)
