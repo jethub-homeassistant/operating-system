@@ -1,12 +1,12 @@
 From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
 From: usera <adeep@lexina.in>
-Date: Mon, 12 Apr 2021 17:16:42 +0300
+Date: Mon, 12 Apr 2021 16:16:42 +0200
 Subject: Fix:meson64: add gpio irq (patch from
  https://lkml.org/lkml/2020/11/27/8)
 
 Signed-off-by: Vyacheslav Bocharov <devel@lexina.in>
 ---
- drivers/pinctrl/meson/pinctrl-meson.c | 41 +++++++++++++++++++++++++++
+ drivers/pinctrl/meson/pinctrl-meson.c | 41 ++++++++++
  drivers/pinctrl/meson/pinctrl-meson.h |  1 +
  2 files changed, 42 insertions(+)
 
@@ -97,3 +97,4 @@ index 34fc4e8612e4..0f9fa04513ea 100644
  #define FUNCTION(fn)							\
 -- 
 Armbian
+
