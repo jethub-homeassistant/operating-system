@@ -9,7 +9,7 @@ on:
 jobs:
   validate_release:
     name: Validate release
-    runs-on: [ "ubuntu-20.04" ]
+    runs-on: ubuntu-latest
     outputs:
       version: ${{ steps.version_check.outputs.version }}
       version_dev: ${{ steps.version_check.outputs.version_dev }}
@@ -52,8 +52,8 @@ jobs:
     runs-on: ${{ matrix.board.runner }}
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v3
+      - name: Checkout source
+        uses: actions/checkout@v3
         with:
           submodules: true
 
@@ -80,7 +80,7 @@ jobs:
 
       - name: Check output files
         run: |
-          ls ${{ github.workspace }}/release
+          ls ${{ github.workspace }}/output/images/haos_*
 
       - name: Upload disk image
         uses: actions/upload-release-asset@v1
@@ -88,7 +88,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ github.workspace }}/release/haos_${{ matrix.board.id }}-${{ needs.validate_release.outputs.version }}.img.xz
+          asset_path: ${{ github.workspace }}/output/images/haos_${{ matrix.board.id }}-${{ needs.validate_release.outputs.version }}.img.xz
           asset_name: haos_${{ matrix.board.id }}-${{ needs.validate_release.outputs.version }}.img.xz
           asset_content_type: application/x-xz
 
@@ -98,7 +98,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ github.workspace }}/release/haos_${{ matrix.board.id }}-${{ needs.validate_release.outputs.version }}.raucb
+          asset_path: ${{ github.workspace }}/output/images/haos_${{ matrix.board.id }}-${{ needs.validate_release.outputs.version }}.raucb
           asset_name: haos_${{ matrix.board.id }}-${{ needs.validate_release.outputs.version }}.raucb
           asset_content_type: application/octet-stream
 
@@ -108,7 +108,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ${{ github.workspace }}/release/haos_${{ matrix.board.id }}-${{ needs.validate_release.outputs.version }}_burn.img.zip
+          asset_path: ${{ github.workspace }}/output/images/haos_${{ matrix.board.id }}-${{ needs.validate_release.outputs.version }}_burn.img.zip
           asset_name: haos_${{ matrix.board.id }}-${{ needs.validate_release.outputs.version }}_burn.img.zip
           asset_content_type: application/x-xz
   
@@ -116,7 +116,7 @@ jobs:
   bump_version:
     name: Bump dev version to ${{ needs.validate_release.outputs.version }}
     needs: [ build, validate_release ]
-    runs-on: [ "ubuntu-20.04" ]
+    runs-on: ubuntu-latest
 
     steps:
     - name: Initialize git
