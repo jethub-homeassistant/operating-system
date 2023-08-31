@@ -11,7 +11,7 @@ jobs:
   prepare:
     if: ${{ github.event_name == 'workflow_dispatch' || contains(github.event.pull_request.labels.*.name, 'run-dev-build') }}
     name: Prepare build
-    runs-on: [ "ubuntu-20.04" ]
+    runs-on: ubuntu-latest
     permissions:
       contents: read
       pull-requests: read
@@ -113,7 +113,7 @@ jobs:
         with:
           rsh: -q
           switches: -aW
-          path: release/
+          path: output/images/haos_*
           remote_path: ${{ secrets.DEV_TARGET_PATH }}/${{ needs.prepare.outputs.version_main }}.${{ needs.prepare.outputs.version_dev }}/
           remote_host: ${{ secrets.DEV_HOST }}
           remote_port: ${{ secrets.DEV_PORT }}
@@ -124,7 +124,7 @@ jobs:
     name: Bump dev channel version
     if: ${{ github.event_name == 'workflow_dispatch' }}
     needs: [ build, prepare ]
-    runs-on: [ "ubuntu-20.04" ]
+    runs-on: ubuntu-latest
 
     steps:
     - name: Initialize git
