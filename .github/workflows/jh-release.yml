@@ -15,7 +15,7 @@ jobs:
       version_dev: ${{ steps.version_check.outputs.version_dev }}
       matrix: ${{ steps.generate_matrix.outputs.result }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Validate version
         id: version_check
         run: |
@@ -53,7 +53,7 @@ jobs:
 
     steps:
       - name: Checkout source
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           submodules: true
 
@@ -68,13 +68,34 @@ jobs:
           echo -e "-----BEGIN CERTIFICATE-----\n${RAUC_CERTIFICATE}\n-----END CERTIFICATE-----" > cert.pem
           echo -e "-----BEGIN PRIVATE KEY-----\n${RAUC_PRIVATE_KEY}\n-----END PRIVATE KEY-----" > key.pem
 
+      - name: Free space on build drive
+        run: |
+          # Inspired by https://github.com/easimon/maximize-build-space/blob/v7/action.yml
+          sudo rm -rf /usr/local/lib/android/sdk/ndk
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          # Make sure cache action can restore this lcoation
+          sudo mkdir /mnt/cache
+          sudo chown -R $(id -u):$(id -g) /mnt/cache
+
+      - name: Cache downloads
+        uses: actions/cache@v3
+        with:
+          path: /mnt/cache/dl
+          key: haos-dl
+
+      - name: Cache object files
+        uses: actions/cache@v3
+        with:
+          path: /mnt/cache/cc
+          key: haos-cc-${{ matrix.board.architecture }}
+
       - name: Build
         run: |
           BUILDER_UID="$(id -u)"
           BUILDER_GID="$(id -g)"
           docker run --rm --privileged -v "${GITHUB_WORKSPACE}:/build" \
             -e BUILDER_UID="${BUILDER_UID}" -e BUILDER_GID="${BUILDER_GID}" \
-            -v "${{ matrix.board.runner }}-build-cache:/cache" \
+            -v "/mnt/cache:/cache" \
             -v "/build/output" \
             haos-builder make BUILDDIR=/build VERSION_DEV=${{ needs.validate_release.outputs.version_dev }} ${{ matrix.board.defconfig }}
 
