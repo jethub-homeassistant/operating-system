@@ -6,7 +6,7 @@
     "runner": "self-hosted",
     "label": "board/jethub",
     "architecture": "aarch64",
-    "supported": "d1,d1p",
+    "supported": "d1,d1p"
   },
   {
     "id": "jethub-h1",
