@@ -1,0 +1,267 @@
+# Home Assistant Operating System build workflow
+
+name: JetHome OS build
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      boards:
+        description: 'List of boards to build (comma separated identifiers)'
+        required: false
+        type: string
+
+env:
+  PYTHON_VERSION: "3.10"
+
+jobs:
+  prepare:
+    name: Prepare build
+    runs-on: self-hosted
+    permissions:
+      contents: read
+      pull-requests: read
+      packages: write
+    outputs:
+      version_dev: ${{ steps.version_dev.outputs.version_dev }}
+      version_main: ${{ steps.version.outputs.version_main }}
+      version_full: ${{ steps.version.outputs.version_full }}
+      channel: ${{ steps.channel.outputs.channel }}
+      matrix: ${{ steps.generate_matrix.outputs.result }}
+      build_container_image: ghcr.io/${{ github.repository_owner }}/haos-builder@${{ steps.build_haos_builder.outputs.digest }}
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Generate development version
+        shell: bash
+        id: version_dev
+        if: ${{ github.event_name != 'release' }}
+        run: |
+          version_dev="dev$(date --utc +'%Y%m%d')"
+          echo "Development version \"${version_dev}\""
+          echo "version_dev=${version_dev}" >> $GITHUB_OUTPUT
+
+      - name: Set version suffix
+        if: ${{ github.event_name != 'release' }}
+        env:
+          VERSION_DEV: ${{ steps.version_dev.outputs.version_dev }}
+        run: |
+          sed -i -E "s/(^VERSION_SUFFIX=\").*(\"$)/\1${VERSION_DEV}\2/" buildroot-external/meta
+
+      - name: Get version
+        id: version
+        run: |
+          . ${GITHUB_WORKSPACE}/buildroot-external/meta
+          echo "version_main=${VERSION_MAJOR}.${VERSION_MINOR}" >> $GITHUB_OUTPUT
+          if [ -z "${VERSION_SUFFIX}" ]; then
+            version_full="${VERSION_MAJOR}.${VERSION_MINOR}"
+          else
+            version_full="${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_SUFFIX}"
+          fi
+          echo "version_full=${version_full}" >> $GITHUB_OUTPUT
+          echo "Full version number of this release is \"${version_full}\"."
+
+      - name: Validate version
+        id: version_check
+        if: ${{ github.event_name == 'release' }}
+        run: |
+          if [ "${{ steps.version.outputs.version_full }}" != "${{ github.event.release.tag_name }}" ]; then
+            echo "Version number in Buildroot metadata does not match tag (${{ steps.version.outputs.version_full }} vs ${{ github.event.release.tag_name }})."
+            exit 1
+          fi
+
+      - name: Get channel
+        id: channel
+        run: |
+          if [[ "${{ github.event_name }}" == "release" ]]; then
+            if [[ "${{ github.event.release.prerelease }}" == "true" ]]; then
+              echo "channel=beta" >> "$GITHUB_OUTPUT"
+            else
+              echo "channel=stable" >> "$GITHUB_OUTPUT"
+            fi
+          else
+            echo "channel=dev" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create build matrix
+        uses: actions/github-script@v6
+        id: generate_matrix
+        with:
+          script: |
+            const boards = require('./.github/workflows/jh-matrix.json')
+            if ("${{ github.event_name }}" == "release") {
+              return { "board": boards }
+            }
+
+            const boardFilter = "${{ github.event.inputs.boards }}"
+            if (boardFilter == "") {
+              console.log("Run full build for all boards")
+              return { "board": boards }
+            } else {
+              console.log("Run partial build")
+              const boardSet = new Set(boardFilter.split(","))
+              const buildBoards = boards.filter(b => boardSet.has(b.id))
+              return { "board": buildBoards }
+            }
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3.0.0
+      - name: Log in to the GitHub container registry
+        uses: docker/login-action@v3.0.0
+        with:
+            registry: ghcr.io
+            username: ${{ github.repository_owner }}
+            password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and Push
+        uses: docker/build-push-action@v5.0.0
+        id: build_haos_builder
+        with:
+          context: .
+          file: Dockerfile
+          tags: ghcr.io/${{ github.repository_owner }}/haos-builder
+          cache-from: ghcr.io/${{ github.repository_owner }}/haos-builder:cache-${{ steps.version_main.outputs.version_main }}
+          cache-to: ghcr.io/${{ github.repository_owner }}/haos-builder:cache-${{ steps.version_main.outputs.version_main }}
+          push: true
+
+  build:
+    name: Development build for ${{ matrix.board.id }}
+    permissions:
+      contents: write  # for actions/upload-release-asset to upload release asset
+    needs: prepare
+    strategy:
+      fail-fast: ${{ github.event_name == 'release' }}
+      matrix: ${{ fromJson(needs.prepare.outputs.matrix) }}
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          persist-credentials: false
+
+      - name: Setup Python version ${{ env.PYTHON_VERSION }}
+        if: ${{ github.event_name != 'release' }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install AWS CLI
+        if: 0 #${{ github.event_name != 'release' }}
+        run: pip install awscli
+
+      - name: Set version suffix
+        if: ${{ github.event_name != 'release' }}
+        env:
+          VERSION_DEV: ${{ needs.prepare.outputs.version_dev }}
+        run: |
+          sed -i -E "s/(^VERSION_SUFFIX=\").*(\"$)/\1${VERSION_DEV}\2/" buildroot-external/meta
+
+      - name: 'Add release PKI certs'
+        env:
+          RAUC_CERTIFICATE: ${{ secrets.RAUC_CERTIFICATE }}
+          RAUC_PRIVATE_KEY: ${{ secrets.RAUC_PRIVATE_KEY }}
+        run: |
+          echo -e "-----BEGIN CERTIFICATE-----\n${RAUC_CERTIFICATE}\n-----END CERTIFICATE-----" > cert.pem
+          echo -e "-----BEGIN PRIVATE KEY-----\n${RAUC_PRIVATE_KEY}\n-----END PRIVATE KEY-----" > key.pem
+
+      - name: Free space on build drive
+        run: |
+          # Inspired by https://github.com/easimon/maximize-build-space/blob/v7/action.yml
+          sudo rm -rf /usr/local/lib/android/sdk/ndk
+          sudo rm -rf /opt/hostedtoolcache/CodeQL
+          # Make sure cache action can restore this lcoation
+          sudo mkdir /mnt/cache
+          sudo chown -R runner:runner /mnt/cache
+
+      - name: Cache downloads
+        uses: actions/cache/restore@v3
+        with:
+          path: /mnt/cache/dl
+          key: haos-dl
+
+      - name: Cache object files
+        uses: actions/cache/restore@v3
+        with:
+          path: /mnt/cache/cc
+          key: haos-cc-${{ matrix.board.id }}
+
+      - name: Build
+        run: |
+          BUILDER_UID="$(id -u)"
+          BUILDER_GID="$(id -g)"
+          docker run --rm --privileged -v "${GITHUB_WORKSPACE}:/build" \
+            -e BUILDER_UID="${BUILDER_UID}" -e BUILDER_GID="${BUILDER_GID}" \
+            -v "/mnt/cache:/cache" \
+            ${{ needs.prepare.outputs.build_container_image }} \
+            make BUILDDIR=/build ${{ matrix.board.defconfig }}
+
+      - name: Upload artifacts
+        if: 0 #${{ github.event_name != 'release' }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_OS_ARTIFACTS_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_OS_ARTIFACTS_KEY }}
+        run: |
+          aws s3 sync \
+            output/images/ \
+            s3://${{ secrets.R2_OS_ARTIFACTS_BUCKET }}/${{ needs.prepare.outputs.version_full }}/ \
+            --exclude "*" \
+            --include "haos_*" \
+            --endpoint-url ${{ secrets.R2_OS_ARTIFACTS_ENDPOINT }}
+
+      - name: Upload images
+        uses: burnett01/rsync-deployments@5.2
+        with:
+          rsh: -q
+          switches: -aW
+          path: output/images/haos_*
+          remote_path: ${{ secrets.DEV_TARGET_PATH }}/${{ needs.prepare.outputs.version_main }}.${{ needs.prepare.outputs.version_dev }}/
+          remote_host: ${{ secrets.DEV_HOST }}
+          remote_port: ${{ secrets.DEV_PORT }}
+          remote_user: ${{ secrets.DEV_USERNAME }}
+          remote_key: ${{ secrets.DEV_SSH_KEY }}
+
+      - name: Upload release assets
+        if: ${{ github.event_name == 'release' }}
+        uses: shogo82148/actions-upload-release-asset@v1
+        with:
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: output/images/haos_*
+
+      - name: Cache downloads
+        uses: actions/cache/save@v3
+        with:
+          path: /mnt/cache/dl
+          key: haos-dl-${{ github.run_id }}
+
+      - name: Cache build
+        uses: actions/cache/save@v3
+        with:
+          path: /mnt/cache/cc
+          key: haos-cc-${{ matrix.board.id }}-${{ github.run_id }}
+
+  bump_version:
+    name: Bump dev channel version
+    if: ${{ github.repository == 'jethub-homeassistant/operating-system' }}
+    needs: [ build, prepare ]
+    runs-on: self-hosted
+
+    steps:
+    - name: Initialize git
+      uses: jethub-homeassistant/actions/helpers/git-init@master-jethub
+      with:
+        name: ${{ secrets.GIT_NAME }}
+        email: ${{ secrets.GIT_EMAIL }}
+        token: ${{ secrets.GIT_TOKEN }}
+
+    - name: Bump Home Assistant OS ${{ needs.prepare.outputs.channel }} channel version
+      uses: jethub-homeassistant/actions/helpers/version-push@master-jethub
+      with:
+        key: "hassos[]"
+        key-description: "Home Assistant OS"
+        version: ${{ needs.prepare.outputs.version_full }}
+        channel: ${{ needs.prepare.outputs.channel }}
