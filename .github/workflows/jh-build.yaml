@@ -18,7 +18,7 @@ env:
 jobs:
   prepare:
     name: Prepare build
-    runs-on: self-hosted
+    runs-on: ubuntu-22.04
     permissions:
       contents: read
       pull-requests: read
@@ -128,7 +128,7 @@ jobs:
           push: true
 
   build:
-    name: Development build for ${{ matrix.board.id }}
+    name: Build for ${{ matrix.board.id }}
     permissions:
       contents: write  # for actions/upload-release-asset to upload release asset
     needs: prepare
@@ -202,15 +202,22 @@ jobs:
 
       - name: Upload artifacts
         if: 0 #${{ github.event_name != 'release' }}
+        working-directory: output/images/
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.R2_OS_ARTIFACTS_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_OS_ARTIFACTS_KEY }}
         run: |
           aws s3 sync \
-            output/images/ \
+            ./ \
             s3://${{ secrets.R2_OS_ARTIFACTS_BUCKET }}/${{ needs.prepare.outputs.version_full }}/ \
             --exclude "*" \
             --include "haos_*" \
+            --endpoint-url ${{ secrets.R2_OS_ARTIFACTS_ENDPOINT }}
+
+            ls haos_* | jq --raw-input | jq --slurp > "${{ needs.prepare.outputs.version_full }}.json"
+          aws s3 cp \
+            "${{ needs.prepare.outputs.version_full }}.json" \
+            s3://${{ secrets.R2_OS_ARTIFACTS_BUCKET }}/indexes/ \
             --endpoint-url ${{ secrets.R2_OS_ARTIFACTS_ENDPOINT }}
 
       - name: Upload images
@@ -245,7 +252,7 @@ jobs:
           key: haos-cc-${{ matrix.board.id }}-${{ github.run_id }}
 
   bump_version:
-    name: Bump dev channel version
+    name: Bump ${{ needs.prepare.outputs.channel }} channel version
     if: ${{ github.repository == 'jethub-homeassistant/operating-system' }}
     needs: [ build, prepare ]
     runs-on: self-hosted
