@@ -1,0 +1,1 @@
+SUBSYSTEM=="net",KERNEL=="eth0",RUN+="/usr/lib/jethome/jethub_set-eth_leds"
