@@ -4,6 +4,10 @@ function hassos_image_name() {
     echo "${BINARIES_DIR}/${HASSOS_ID}_${BOARD_ID}-$(hassos_version).${1}"
 }
 
+function hassos_image_name_burn() {
+    echo "${BINARIES_DIR}/${HASSOS_ID}_${BOARD_ID}-$(hassos_version)_burn.${1}"
+}
+
 function hassos_image_basename() {
     echo "${BINARIES_DIR}/${HASSOS_ID}_${BOARD_ID}-$(hassos_version)"
 }
