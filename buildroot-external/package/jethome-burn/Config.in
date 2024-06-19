@@ -1,0 +1,16 @@
+config BR2_PACKAGE_JETHOME_BURN
+	 bool "jethome-burn"
+	 help
+	   This package enables create of burn images
+
+	   https://github.com/jethome-ru/jethome-tools
+
+
+if BR2_PACKAGE_JETHOME_BURN
+
+config BR2_PACKAGE_JETHOME_BURN_BOARD
+	string "Board for burnable image"
+	depends on BR2_PACKAGE_JETHOME_BURN
+	help
+	  Name of the board for which burn binaries should be used
+endif
