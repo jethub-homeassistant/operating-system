@@ -200,9 +200,11 @@ jobs:
           # Inspired by https://github.com/easimon/maximize-build-space/blob/v7/action.yml
           sudo rm -rf /usr/local/lib/android/sdk/ndk
           sudo rm -rf /opt/hostedtoolcache/CodeQL
-          sudo mkdir /mnt/cache
+          sudo mkdir -p /mnt/cache/dl
           sudo mkdir /mnt/output
           sudo chown -R runner:runner /mnt/cache /mnt/output
+          sudo apt-get update; sudo apt-get install -y nfs-client
+          sudo mount -t nfs 10.180.76.22:/cache/buildroot-haos/dl /mnt/cache/dl
           WORKSPACE_OWNER="$(stat -c '%U:%G' "${GITHUB_WORKSPACE}")"
           # output directory is symlinked for easier access from workspace
           # but for build container it must be mounted as a volume
