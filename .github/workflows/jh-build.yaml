@@ -233,6 +233,7 @@ jobs:
 
       - name: Check Linux config
         run: |
+          find output/images/haos*
           docker run --rm --privileged \
             -e BUILDER_UID="$(id -u)" -e BUILDER_GID="$(id -g)" \
             -v "${GITHUB_WORKSPACE}:/build" \
@@ -295,7 +296,7 @@ jobs:
 
       - name: Upload OS image artifact
         uses: actions/upload-artifact@v4
-        if: ${{ github.event_name != 'release' && needs.prepare.outputs.publish_build != 'true' && matrix.board.id != 'ova' }}
+        if: ${{ github.event_name != 'release' && needs.prepare.outputs.publish_build != 'true' }}
         with:
           name: haos_${{ matrix.board.id }}-${{ needs.prepare.outputs.version_full }}.img.xz
           path: |
