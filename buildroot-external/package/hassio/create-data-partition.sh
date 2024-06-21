@@ -31,6 +31,9 @@ docker stop "${container}"
 # Unmount data image
 sudo umount "${build_dir}/data/"
 
+sudo sync
+
+e2fsck -f "${data_img}"
 resize2fs "${data_img}"
 
 
