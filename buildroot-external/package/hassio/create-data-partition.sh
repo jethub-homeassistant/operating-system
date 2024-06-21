@@ -27,13 +27,15 @@ container=$(docker run --privileged -e DOCKER_TLS_CERTDIR="" \
 docker exec "${container}" sh /build/dind-import-containers.sh
 
 docker stop "${container}"
-
+sleep 10
+sudo sync
+sleep 10
 # Unmount data image
 sudo umount "${build_dir}/data/"
 
 sudo sync
 
-e2fsck -f "${data_img}"
+e2fsck -f -p "${data_img}"
 resize2fs "${data_img}"
 
 
