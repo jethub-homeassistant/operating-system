@@ -12,7 +12,7 @@ on:
         required: false
         type: string
       publish:
-        description: 'Publish build artifacts to R2 (not applicable to forks)'
+        description: 'Publish build artifacts'
         required: true
         type: boolean
         default: true
@@ -143,7 +143,7 @@ jobs:
             username: ${{ github.repository_owner }}
             password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and Push
-        uses: docker/build-push-action@v6.0.0
+        uses: docker/build-push-action@v6.2.0
         id: build_haos_builder
         with:
           context: .
@@ -204,11 +204,11 @@ jobs:
           sudo mkdir /mnt/output
           sudo chown -R runner:runner /mnt/cache /mnt/output
           sudo apt-get update; sudo apt-get install -y nfs-client
-          sudo mount -t nfs 10.180.76.22:/cache/buildroot-haos/dl /mnt/cache/dl
+          sudo mount -t nfs 10.180.76.22:/cache/buildroot-haos/dl /mnt/cache/dl || true
           WORKSPACE_OWNER="$(stat -c '%U:%G' "${GITHUB_WORKSPACE}")"
           # output directory is symlinked for easier access from workspace
           # but for build container it must be mounted as a volume
-          sudo ln -sf /mnt/output "${GITHUB_WORKSPACE}/output"
+          #sudo ln -sf /mnt/output "${GITHUB_WORKSPACE}/output"
           sudo chown -R "${WORKSPACE_OWNER}" /mnt/cache
           sudo chown -R "${WORKSPACE_OWNER}" /mnt/output
           df -h
@@ -227,34 +227,36 @@ jobs:
             -e BUILDER_UID="${BUILDER_UID}" -e BUILDER_GID="${BUILDER_GID}" \
             -v "${GITHUB_WORKSPACE}:/build" \
             -v "/mnt/cache:/cache" \
-            -v "/mnt/output:/build/output" \
             ${{ needs.prepare.outputs.build_container_image }} \
             make BUILDDIR=/build ${{ matrix.board.defconfig }}
 
-      - name: Check Linux config
+      - name: Check output
         run: |
           find output/images/haos*
-          docker run --rm --privileged \
-            -e BUILDER_UID="$(id -u)" -e BUILDER_GID="$(id -g)" \
-            -v "${GITHUB_WORKSPACE}:/build" \
-            -v "/mnt/cache:/cache" \
-            -v "/mnt/output:/build/output" \
-            ${{ needs.prepare.outputs.build_container_image }} \
-            make -C buildroot O="/build/output" BR2_EXTERNAL="/build/buildroot-external" \
-            BR2_CHECK_DOTCONFIG_OPTS="--github-format --strip-path-prefix=/build/" linux-check-dotconfig
 
       - name: Upload artifacts
         if: ${{ github.event_name != 'release' && needs.prepare.outputs.publish_build == 'true' }}
-        uses: burnett01/rsync-deployments@5.2
+        uses: burnett01/rsync-deployments@7.0.1
         with:
           rsh: -q
-          switches: -aW
-          path: output/images/haos_*
+          switches: -aW --include="haos_*" --exclude="*"
+          path: "output/images/"
           remote_path: ${{ secrets.DEV_TARGET_PATH }}/${{ needs.prepare.outputs.version_main }}.${{ needs.prepare.outputs.version_dev }}/
           remote_host: ${{ secrets.DEV_HOST }}
           remote_port: ${{ secrets.DEV_PORT }}
           remote_user: ${{ secrets.DEV_USERNAME }}
           remote_key: ${{ secrets.DEV_SSH_KEY }}
+
+      - name: Check Linux config
+        run: |
+          docker run --rm --privileged \
+            -e BUILDER_UID="$(id -u)" -e BUILDER_GID="$(id -g)" \
+            -v "${GITHUB_WORKSPACE}:/build" \
+            -v "/mnt/cache:/cache" \
+            ${{ needs.prepare.outputs.build_container_image }} \
+            make -C buildroot O="/build/output" BR2_EXTERNAL="/build/buildroot-external" \
+            BR2_CHECK_DOTCONFIG_OPTS="--github-format --strip-path-prefix=/build/" linux-check-dotconfig
+
 
       - name: Upload release assets
         if: ${{ github.event_name == 'release' }}
