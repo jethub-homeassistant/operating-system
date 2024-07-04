@@ -1,0 +1,152 @@
+#!/bin/sh
+# shellcheck disable=SC2317
+
+
+GPIO_DIRECTION_OUTPUT=0
+
+GPIO_ACTIVE_LOW=0
+GPIO_ACTIVE_HIGH=1
+
+reset_zigbee() {
+    echo "${0}: Reset Zigbee module ..."
+    gpio_set 0 9 1 ${GPIO_ACTIVE_HIGH}
+    gpio_set 0 6 1 ${GPIO_ACTIVE_HIGH}
+    sleep 1
+    gpio_set 0 6 0 ${GPIO_ACTIVE_HIGH}
+}
+
+reset_zwave() {
+    echo "${0}: Reset Z-Wave module ..."
+    # Optional SUSPEND pin
+    # gpio_set 1 90 1 ${GPIO_ACTIVE_HIGH}
+    gpio_set 1 89 1 "${GPIO_ACTIVE_HIGH}"
+    sleep 1
+    gpio_set 1 89 0 "${GPIO_ACTIVE_HIGH}"
+}
+
+eth_leds() {
+    echo "${0}: Configure Ethernet leds ..."
+    /usr/sbin/jethub_set-eth_leds
+}
+
+ENABLESYSFS=${JETHUB_SYSFS_ENABLE:-true}
+
+GPIOSET=${GPIOSET:-/usr/bin/gpioset}
+
+configure_gpiobase() {
+    GPIOBASE=""
+    GPIOCHIP=""
+    GPIOCHIPBASE=""
+
+    for gpiochipsys in /sys/class/gpio/gpiochip*/; do
+        gpiochipsys=${gpiochipsys%*/}
+        gpiochiptemp=$(find "$gpiochipsys"/device/gpiochip* -type d | head -n 1)
+        GPIOCHIP=$(basename "$gpiochiptemp")
+        GPIOBASE=$(cat "$gpiochipsys/base")
+        GPIOCHIPBASE=$(echo "$GPIOCHIP" | tr -d -c 0-9)=$GPIOBASE
+    done
+
+    if [ -z "$GPIOBASE" ]; then
+        echo "Can not find gpiochip and base number"
+        exit 1
+    fi
+}
+
+gpio_set() {
+    gpiochip=$1
+    GPIOL=$2
+    VALUE=$3
+    LOW=$4
+    base=$(echo "$GPIOCHIPBASE" | grep -o "${gpiochip}=[0-9]*" | cut -d= -f2)
+    echo "$0: GPIOSET: gpiochip=$gpiochip line=$GPIOL val=$VALUE low=$LOW base=$base"
+
+    if [ "$ENABLESYSFS" = "true" ]; then
+        GPIOLINE=$((base + GPIOL))
+        echo "$VALUE" > /sys/class/gpio/gpio${GPIOLINE}/value
+    else
+        if [ "$LOW" = "$GPIO_ACTIVE_LOW" ]; then
+            LOW="-l"
+        else
+            LOW=""
+        fi
+        $GPIOSET "$LOW" "$gpiochip" "$GPIOL=$VALUE"
+    fi
+}
+
+unexport_sysfs() {
+    for i in /sys/class/gpio/gpio*; do
+        if ! echo "$i" | grep -q chip; then
+            ii=$(basename "$i" | tr -d -c 0-9)
+            echo "$ii" > /sys/class/gpio/unexport
+        fi
+    done
+}
+
+configure_gpio() {
+    GPIOCHIP=$1
+    GPIOL=$2
+    DIRECTION=$3
+    ACTIVELEVEL=$4
+    base=$(echo "$GPIOCHIPBASE" | grep -o "${GPIOCHIP}=[0-9]*" | cut -d= -f2)
+    GPIOLINE=$((base + GPIOL))
+
+    echo "$0: Export GPIO to sysfs: gpio=$GPIOLINE ($GPIOL), direction=$DIRECTION, active_level=$ACTIVELEVEL"
+    if [ ! -d /sys/class/gpio/gpio${GPIOLINE} ]; then
+        echo $GPIOLINE > /sys/class/gpio/export
+        if [ ! -d /sys/class/gpio/gpio${GPIOLINE} ]; then
+            echo "$0: *** Error: Failed to configure GPIO $GPIOLINE"
+            exit 1
+        fi
+    fi
+
+    if [ "$DIRECTION" = "$GPIO_DIRECTION_OUTPUT" ]; then
+        echo "out" > /sys/class/gpio/gpio${GPIOLINE}/direction
+    else
+        echo "in" > /sys/class/gpio/gpio${GPIOLINE}/direction
+    fi
+
+    if [ "$ACTIVELEVEL" = "$GPIO_ACTIVE_LOW" ]; then
+        echo 1 > /sys/class/gpio/gpio${GPIOLINE}/active_low
+    fi
+}
+
+configure_led() {
+    echo "$0: Configure: gpiochip=$1 led=$2, state=$3, active_level=$4"
+    gpio_set "$1" "$2" "$3" "$4"
+}
+
+### begin
+
+echo "$0: Unexport gpio from sysfs"
+unexport_sysfs
+
+if [ "$ENABLESYSFS" = "true" ]; then
+    echo "$0: Configure GPIOs as sysfs ..."
+
+    configure_gpiobase
+
+    # Zigbee module: RESET, BOOT
+    configure_gpio 0 6 ${GPIO_DIRECTION_OUTPUT} ${GPIO_ACTIVE_HIGH}
+    configure_gpio 0 9 ${GPIO_DIRECTION_OUTPUT} ${GPIO_ACTIVE_HIGH}
+    # Z-Wave module: RESET, SUSPEND
+    configure_gpio 1 89 ${GPIO_DIRECTION_OUTPUT} ${GPIO_ACTIVE_HIGH}
+    configure_gpio 1 90 ${GPIO_DIRECTION_OUTPUT} ${GPIO_ACTIVE_HIGH}
+    # LED
+    configure_gpio 1 73 ${GPIO_DIRECTION_OUTPUT} ${GPIO_ACTIVE_HIGH}
+
+else
+    echo "$0: Configure GPIOs for gpiod"
+fi
+
+
+echo "$0: Configure LEDs ..."
+# LED
+configure_led 1 73 0 ${GPIO_ACTIVE_HIGH}
+
+reset_zigbee
+
+eth_leds
+
+echo "$0: Initialization done"
+
+exit 0

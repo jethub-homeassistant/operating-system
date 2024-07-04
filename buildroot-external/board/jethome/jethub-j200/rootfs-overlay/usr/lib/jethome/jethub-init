@@ -1,0 +1,167 @@
+#!/bin/sh
+
+GPIO_DIRECTION_OUTPUT=0
+GPIO_DIRECTION_INPUT=1
+
+GPIO_ACTIVE_LOW=0
+GPIO_ACTIVE_HIGH=1
+
+reset_uxm1() {
+    echo "${0}: Reset UXM1 module ..."
+    gpio_set 2 5 1 ${GPIO_ACTIVE_HIGH}
+    gpio_set 2 6 1 ${GPIO_ACTIVE_HIGH}
+    sleep 1
+    gpio_set 2 6 0 ${GPIO_ACTIVE_HIGH}
+}
+
+reset_uxm2() {
+    echo "${0}: Reset UXM2 module ..."
+    gpio_set 2 7 1 ${GPIO_ACTIVE_HIGH}
+    gpio_set 2 6 1 ${GPIO_ACTIVE_HIGH}
+    sleep 1
+    gpio_set 2 6 0 ${GPIO_ACTIVE_HIGH}
+}
+
+config_1wire() {
+    echo "$0: Configure 1-Wire ..."
+    if ! modprobe ds2482; then
+        echo "$0: *** Error: Failed to load DS2482 kernel module"
+    else
+        echo "$0: DS2482 kernel module loaded"
+    fi
+}
+
+ENABLESYSFS=${JETHUB_SYSFS_ENABLE:-true}
+
+GPIOSET=${GPIOSET:-/usr/bin/gpioset}
+
+configure_gpiobase() {
+    GPIOBASE=""
+    GPIOCHIP=""
+    GPIOCHIPBASE=""
+
+    for gpiochipsys in /sys/class/gpio/gpiochip*/; do
+        gpiochipsys=${gpiochipsys%*/}
+        gpiochiptemp=$(find "$gpiochipsys"/device/gpiochip* -type d | head -n 1)
+        GPIOCHIP=$(basename "$gpiochiptemp")
+        GPIOBASE=$(cat "$gpiochipsys/base")
+        GPIOCHIPBASE=$(echo "$GPIOCHIP" | tr -d -c 0-9)=$GPIOBASE
+    done
+
+    if [ -z "$GPIOBASE" ]; then
+        echo "Can not find gpiochip and base number"
+        exit 1
+    fi
+}
+
+gpio_set() {
+    gpiochip=$1
+    GPIOL=$2
+    VALUE=$3
+    LOW=$4
+    base=$(echo "$GPIOCHIPBASE" | grep -o "${gpiochip}=[0-9]*" | cut -d= -f2)
+    echo "$0: GPIOSET: gpiochip=$gpiochip line=$GPIOL val=$VALUE low=$LOW base=$base"
+
+    if [ "$ENABLESYSFS" = "true" ]; then
+        GPIOLINE=$((base + GPIOL))
+        echo "$VALUE" > /sys/class/gpio/gpio${GPIOLINE}/value
+    else
+        if [ "$LOW" = "$GPIO_ACTIVE_LOW" ]; then
+            LOW="-l"
+        else
+            LOW=""
+        fi
+        $GPIOSET "$LOW" "$gpiochip" "$GPIOL=$VALUE"
+    fi
+}
+
+unexport_sysfs() {
+    for i in /sys/class/gpio/gpio*; do
+        if ! echo "$i" | grep -q chip; then
+            ii=$(basename "$i" | tr -d -c 0-9)
+            echo "$ii" > /sys/class/gpio/unexport
+        fi
+    done
+}
+
+configure_gpio() {
+    GPIOCHIP=$1
+    GPIOL=$2
+    DIRECTION=$3
+    ACTIVELEVEL=$4
+    base=$(echo "$GPIOCHIPBASE" | grep -o "${GPIOCHIP}=[0-9]*" | cut -d= -f2)
+    GPIOLINE=$((base + GPIOL))
+
+    echo "$0: Export GPIO to sysfs: gpio=$GPIOLINE ($GPIOL), direction=$DIRECTION, active_level=$ACTIVELEVEL"
+    if [ ! -d /sys/class/gpio/gpio${GPIOLINE} ]; then
+        echo $GPIOLINE > /sys/class/gpio/export
+        if [ ! -d /sys/class/gpio/gpio${GPIOLINE} ]; then
+            echo "$0: *** Error: Failed to configure GPIO $GPIOLINE"
+            exit 1
+        fi
+    fi
+
+    if [ "$DIRECTION" = "$GPIO_DIRECTION_OUTPUT" ]; then
+        echo "out" > /sys/class/gpio/gpio${GPIOLINE}/direction
+    else
+        echo "in" > /sys/class/gpio/gpio${GPIOLINE}/direction
+    fi
+
+    if [ "$ACTIVELEVEL" = "$GPIO_ACTIVE_LOW" ]; then
+        echo 1 > /sys/class/gpio/gpio${GPIOLINE}/active_low
+    fi
+}
+
+configure_led() {
+    echo "$0: Configure: gpiochip=$1 led=$2, state=$3, active_level=$4"
+    gpio_set "$1" "$2" "$3" "$4"
+}
+
+### begin
+
+echo "$0: Unexport gpio from sysfs"
+unexport_sysfs
+
+if [ "$ENABLESYSFS" = "true" ]; then
+    echo "$0: Configure GPIOs as sysfs ..."
+
+    configure_gpiobase
+
+    # Discrete inputs: 1, 2, 3
+    configure_gpio 2  8 ${GPIO_DIRECTION_INPUT} ${GPIO_ACTIVE_HIGH}
+    configure_gpio 2  9 ${GPIO_DIRECTION_INPUT} ${GPIO_ACTIVE_HIGH}
+    configure_gpio 2 10 ${GPIO_DIRECTION_INPUT} ${GPIO_ACTIVE_HIGH}
+    # Relays: 1, 2
+    configure_gpio 2  0 ${GPIO_DIRECTION_OUTPUT} ${GPIO_ACTIVE_HIGH}
+    configure_gpio 2  1 ${GPIO_DIRECTION_OUTPUT} ${GPIO_ACTIVE_HIGH}
+    # UXM1 module: RESET, BOOT
+    configure_gpio 2  4 ${GPIO_DIRECTION_OUTPUT} ${GPIO_ACTIVE_HIGH}
+    configure_gpio 2  5 ${GPIO_DIRECTION_OUTPUT} ${GPIO_ACTIVE_HIGH}
+    # UXM2 module: RESET, BOOT
+    configure_gpio 2  6 ${GPIO_DIRECTION_OUTPUT} ${GPIO_ACTIVE_HIGH}
+    configure_gpio 2  7 ${GPIO_DIRECTION_OUTPUT} ${GPIO_ACTIVE_HIGH}
+    # LEDs: RED, GREEN
+    configure_gpio 0 21 ${GPIO_DIRECTION_OUTPUT} ${GPIO_ACTIVE_LOW}
+    configure_gpio 1 11 ${GPIO_DIRECTION_OUTPUT} ${GPIO_ACTIVE_LOW}
+    # Button
+    configure_gpio 1 10 ${GPIO_DIRECTION_INPUT} ${GPIO_ACTIVE_LOW}
+
+else
+    echo "$0: Configure GPIOs for gpiod"
+fi
+
+
+echo "$0: Configure LEDs ..."
+
+# LED RED
+configure_led 0 21 0 ${GPIO_ACTIVE_HIGH}
+# LED GREEN
+configure_led 1 11 1 ${GPIO_ACTIVE_HIGH}
+
+reset_uxm1
+reset_uxm2
+config_1wire
+
+echo "$0: Initialization done"
+
+exit 0
