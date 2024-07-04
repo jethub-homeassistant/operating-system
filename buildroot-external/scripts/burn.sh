@@ -66,8 +66,8 @@ function size2number() {
 
 
 function _create_dtb_file () {
-    local boot_size=$(size2number "$(get_boot_size)")
-    local kernel0_size=$(size2number "$KERNEL_SIZE")
+    local boot_size=$(size2number "${BOOT_SIZE}")
+    local kernel0_size=$(size2number "${KERNEL_SIZE}")
     local system0_size=$(size2number "$SYSTEM_SIZE")
     local kernel1_size=$(size2number "$KERNEL_SIZE")
     local system1_size=$(size2number "$SYSTEM_SIZE")
