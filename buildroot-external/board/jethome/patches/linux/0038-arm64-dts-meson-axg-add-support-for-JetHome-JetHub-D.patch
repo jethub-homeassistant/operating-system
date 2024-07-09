@@ -1,6 +1,6 @@
-From 399b854d4adc3fdacfb171da0bd4d3c4f0659216 Mon Sep 17 00:00:00 2001
+From 7fc42f4944076b922a301facad591b28f3842227 Mon Sep 17 00:00:00 2001
 From: Viacheslav Bocharov <adeep@lexina.in>
-Date: Thu, 16 May 2024 15:14:08 +0300
+Date: Tue, 9 Jul 2024 18:33:48 +0300
 Subject: [PATCH 38/39] arm64: dts: meson-axg: add support for JetHome JetHub
  D2 (j200)
 
@@ -24,8 +24,8 @@ features:
 Signed-off-by: Viacheslav Bocharov <adeep@lexina.in>
 ---
  arch/arm64/boot/dts/amlogic/Makefile          |   1 +
- .../amlogic/meson-sm1-jethome-jethub-j200.dts | 618 ++++++++++++++++++
- 2 files changed, 619 insertions(+)
+ .../amlogic/meson-sm1-jethome-jethub-j200.dts | 644 ++++++++++++++++++
+ 2 files changed, 645 insertions(+)
  create mode 100644 arch/arm64/boot/dts/amlogic/meson-sm1-jethome-jethub-j200.dts
 
 diff --git a/arch/arm64/boot/dts/amlogic/Makefile b/arch/arm64/boot/dts/amlogic/Makefile
@@ -42,10 +42,10 @@ index 8b6f57a94863..50728f37119e 100644
  dtb-$(CONFIG_ARCH_MESON) += meson-sm1-odroid-hc4.dtb
 diff --git a/arch/arm64/boot/dts/amlogic/meson-sm1-jethome-jethub-j200.dts b/arch/arm64/boot/dts/amlogic/meson-sm1-jethome-jethub-j200.dts
 new file mode 100644
-index 000000000000..c309f25374b3
+index 000000000000..509dfa766945
 --- /dev/null
 +++ b/arch/arm64/boot/dts/amlogic/meson-sm1-jethome-jethub-j200.dts
-@@ -0,0 +1,618 @@
+@@ -0,0 +1,644 @@
 +// SPDX-License-Identifier: (GPL-2.0+ OR MIT)
 +/*
 + * Copyright (c) 2024 JetHome
@@ -189,7 +189,7 @@ index 000000000000..c309f25374b3
 +		regulator-max-microvolt = <5000000>;
 +		vin-supply = <&vcc_5v>;
 +
-+		/* Connected to the microUSB port power enable */
++		/* Connected to the internal USB-Hub */
 +		gpio = <&gpio_ao GPIOAO_2 GPIO_ACTIVE_HIGH>;
 +		enable-active-high;
 +	};
@@ -275,28 +275,14 @@ index 000000000000..c309f25374b3
 +		led-red {
 +			color = <LED_COLOR_ID_RED>;
 +			function = LED_FUNCTION_POWER;
-+			gpios = <&gpio GPIOH_5 GPIO_ACTIVE_HIGH>;
-+			default-state = "on";
++			gpios = <&gpio GPIOH_5 GPIO_ACTIVE_LOW>;
++			default-state = "off";
 +		};
 +
 +	};
 +
 +	sound {
 +		model = "JETHUB-D2";
-+	};
-+
-+	usb-hub {
-+		dr_mode = "host";
-+		#address-cells = <1>;
-+		#size-cells = <0>;
-+
-+		/* USB 2.0 hub with reset gpio */
-+		hub_2_0: hub@1 {
-+			compatible = "usb5e3,610";
-+			reg = <1>;
-+			reset-gpios = <&gpio GPIOH_4 GPIO_ACTIVE_LOW>;
-+			vdd-supply = <&vcc_5v>;
-+		};
 +	};
 +
 +};
@@ -382,7 +368,8 @@ index 000000000000..c309f25374b3
 +		"", "", "", "", "", "", "", "",
 +		"", "", "", "", "", "", "", "",
 +		/* GPIOH */
-+		"", "", "", "", "",
++		"", "", "", "",
++		"HUB_RESET", /* GPIOH_4 */
 +		"LED_RED", /* GPIOH_5 */
 +		"I2C_SDA_MODULES", /* GPIOH_6 */
 +		"I2C_SCL_MODULES", /* GPIOH_7 */
@@ -418,12 +405,27 @@ index 000000000000..c309f25374b3
 +		"I2C_SDA_LCDBUS",  /* GPIOX_17 */
 +		"I2C_SCL_LCDBUS",  /* GPIOX_18 */
 +		""; /* GPIOX_19 */
++	/*
++	 * WARNING: The USB Hub needs a reset signal to be turned low in
++	 * order to be detected by the USB Controller. This signal should
++	 * be handled by a USB specific power sequence to reset the Hub
++	 * when the USB bus is powered down.
++	 */
++	usb-hub-hog {
++		gpio-hog;
++		gpios = <GPIOH_4 GPIO_ACTIVE_LOW>;
++		output-low;
++		line-name = "usb-hub-reset";
++	};
++
 +};
 +
 +&gpio_ao {
 +	gpio-line-names =
 +		/* GPIOAO */
-+		"", "", "", "",
++		"", "",
++		"USB_PWRON", /* GPIOAO_2 */
++		"",
 +		"MCU_RESET", /* GPIOAO_4 */
 +		"POWER_GOOD", /* GPIOAO_5 */
 +		"",
@@ -506,12 +508,14 @@ index 000000000000..c309f25374b3
 +	pinctrl-0 = <&nor_pins>;
 +	pinctrl-names = "default";
 +
-+	flash@0 {
++	flash: nor-flash@0 {
++		compatible = "sst,w25q256", "jedec,spi-nor";
 +		#address-cells = <1>;
 +		#size-cells = <1>;
-+		compatible = "jedec,spi-nor";
 +		reg = <0>;
-+		spi-max-frequency = <104000000>;
++		/*spi-max-frequency = <4000000>;*/ /* 4MHz */
++		/*spi-max-frequency = <104000000>;*/
++		spi-max-frequency = <30000000>;
 +	};
 +};
 +
@@ -663,6 +667,28 @@ index 000000000000..c309f25374b3
 +		reg = <0x49>;
 +	};
 +
++};
++
++&efuse {
++	eth_mac: eth-mac@0 {
++		reg = <0x0 0x6>;
++	};
++
++	bt_mac: bt-mac@6 {
++		reg = <0x6 0x6>;
++	};
++
++	wifi_mac: wifi-mac@c {
++		reg = <0xc 0x6>;
++	};
++
++	bid: bid@12 {
++		reg = <0x12 0x20>;
++	};
++
++	sn: sn@32 {
++		reg = <0x32 0x20>;
++	};
 +};
 -- 
 2.45.2
