@@ -85,7 +85,7 @@ configure_gpio() {
     GPIOL=$2
     DIRECTION=$3
     ACTIVELEVEL=$4
-    base=$(get_gpiobase "${gpiochip}")
+    base=$(get_gpiobase "${GPIOCHIP}")
     GPIOLINE=$((base + GPIOL))
 
     echo "$0: Export GPIO to sysfs: gpio=$GPIOLINE ($GPIOL), direction=$DIRECTION, active_level=$ACTIVELEVEL"
