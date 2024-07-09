@@ -5,7 +5,8 @@
 #
 ################################################################################
 
-JETHOME_BURN_VERSION = b573f5581c3f8c30d980dc9b37f21694b8740452
+JETHOME_BURN_VERSION = b147825d93a5b4cb6db46a72630b676a9eb07a2d
+#b573f5581c3f8c30d980dc9b37f21694b8740452
 #1637ad52cd62c13c81f30355984a29901c134ebf
 JETHOME_BURN_SITE = https://github.com/jethome-ru/jethome-tools
 JETHOME_BURN_SITE_METHOD = git
