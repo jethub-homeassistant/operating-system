@@ -87,7 +87,7 @@ configure_gpio() {
     GPIOL=$2
     DIRECTION=$3
     ACTIVELEVEL=$4
-    base=$(get_gpiobase "${gpiochip}")
+    base=$(get_gpiobase "${GPIOCHIP}")
     GPIOLINE=$((base + GPIOL))
 
     echo "$0: Export GPIO to sysfs: gpio=$GPIOLINE ($GPIOL), direction=$DIRECTION, active_level=$ACTIVELEVEL"
@@ -136,9 +136,6 @@ if [ "$ENABLESYSFS" = "true" ]; then
     # UXM2 module: RESET, BOOT
     configure_gpio 2  6 ${GPIO_DIRECTION_OUTPUT} ${GPIO_ACTIVE_HIGH}
     configure_gpio 2  7 ${GPIO_DIRECTION_OUTPUT} ${GPIO_ACTIVE_HIGH}
-    # LEDs: RED, GREEN
-    configure_gpio 0 21 ${GPIO_DIRECTION_OUTPUT} ${GPIO_ACTIVE_LOW}
-    configure_gpio 1 11 ${GPIO_DIRECTION_OUTPUT} ${GPIO_ACTIVE_LOW}
     # Button
     configure_gpio 1 10 ${GPIO_DIRECTION_INPUT} ${GPIO_ACTIVE_LOW}
 
