@@ -8,11 +8,11 @@ function _create_disk_burn() {
     local hdd_img="$(hassos_image_name "${hdd_ext}")"
     local hdd_img_burn="$(hassos_image_name_burn "${hdd_ext}")"
 
-    local boot_img="$(path_boot_img)"
+    local boot_img="boot.vfat"
     local rootfs_img="$(path_rootfs_img)"
-    local overlay_img="$(path_overlay_img)"
+    local overlay_img="overlay.ext4"
     local data_img="$(path_data_img)"
-    local kernel_img="$(path_kernel_img)"
+    local kernel_img="kernel.img"
 
     local ddrbin_img="DDR.USB"
     local ubootbin_img="UBOOT.USB"
