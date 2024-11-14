@@ -21,6 +21,7 @@ test -n "${MACHINE_ID}" || setenv BOOT_CONDITION "systemd.condition-first-boot=t
 # JHaOS bootargs
 setenv bootargs_hassos "zram.enabled=1 zram.num_devices=3 systemd.machine_id=${MACHINE_ID} clk_ignore_unused usb-storage.quirks=0x2537:0x1066:u,0x2537:0x1068:u fsck.repair=yes ${BOOT_CONDITION}"
 
+
 # Load board vars
 
 if test -n "${board_name}"; then setenv bootargs_hassos "${bootargs_hassos} board=${board}"; fi
@@ -33,8 +34,8 @@ if test -n "${serial}"; then setenv bootargs_hassos "${bootargs_hassos} serial=$
 if test -n "${usid}"; then setenv bootargs_hassos "${bootargs_hassos} usid=${usid}"; fi
 
 # JHaOS system A/B
-setenv bootargs_a "root=PARTUUID=48617373-06 rootfstype=squashfs ro rootwait"
-setenv bootargs_b "root=PARTUUID=48617373-08 rootfstype=squashfs ro rootwait"
+setenv bootargs_a "root=PARTUUID=48617373-06 ro rootwait"
+setenv bootargs_b "root=PARTUUID=48617373-08 ro rootwait"
 
 # Load environment from haos-config.txt
 if test -e ${devtype} ${devnum}:1 haos-config.txt; then
