@@ -1,0 +1,29 @@
+[
+  {
+    "id": "jethub-d2",
+    "name": "jethub-d2",
+    "defconfig": "jethub_j200",
+    "runner": "self-hosted",
+    "label": "board/jethub",
+    "architecture": "aarch64",
+    "supported": "d2"
+  },
+  {
+    "id": "jethub-d1",
+    "name": "jethub-d1",
+    "defconfig": "jethub_j100",
+    "runner": "self-hosted",
+    "label": "board/jethub",
+    "architecture": "aarch64",
+    "supported": "d1,d1p"
+  },
+  {
+    "id": "jethub-h1",
+    "name": "jethub-h1",
+    "defconfig": "jethub_j80",
+    "runner": "self-hosted",
+    "label": "board/jethub",
+    "architecture": "aarch64",
+    "supported": "h1"
+  }
+]
