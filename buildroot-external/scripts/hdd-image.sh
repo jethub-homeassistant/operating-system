@@ -4,7 +4,7 @@ BOOTSTATE_SIZE=8M
 SYSTEM_SIZE=256M
 KERNEL_SIZE=24M
 OVERLAY_SIZE=96M
-DATA_SIZE=1280M
+DATA_SIZE=6000M
 
 function create_disk_image() {
     if [ -f "${BOARD_DIR}/genimage.cfg" ]; then
