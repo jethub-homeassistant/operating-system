@@ -1,13 +1,13 @@
 [Unit]
-Description=HassOS boot partition
+Description=JHOS boot partition
 DefaultDependencies=no
 Before=umount.target local-fs.target
-After=systemd-fsck@dev-disk-by\x2dlabel-hassos\x2dboot.service
-Wants=systemd-fsck@dev-disk-by\x2dlabel-hassos\x2dboot.service
+After=systemd-fsck@dev-disk-by\x2dlabel-os\x2dboot.service
+Wants=systemd-fsck@dev-disk-by\x2dlabel-os\x2dboot.service
 Conflicts=umount.target
 
 [Mount]
-What=/dev/disk/by-label/hassos-boot
+What=/dev/disk/by-label/os-boot
 Where=/mnt/boot
 Type=auto
 Options=sync

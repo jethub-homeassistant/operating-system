@@ -1,22 +1,22 @@
 #!/bin/bash
 
-function hassos_image_name() {
-    echo "${BINARIES_DIR}/${HASSOS_ID}_${BOARD_ID}-$(hassos_version).${1}"
+function os_image_name() {
+    echo "${BINARIES_DIR}/${OS_ID}_${BOARD_ID}-$(os_version).${1}"
 }
 
-function hassos_image_name_burn() {
-    echo "${BINARIES_DIR}/${HASSOS_ID}_${BOARD_ID}-$(hassos_version)_burn.${1}"
+function os_image_name_burn() {
+    echo "${BINARIES_DIR}/${OS_ID}_${BOARD_ID}-$(os_version)_burn.${1}"
 }
 
-function hassos_image_basename() {
-    echo "${BINARIES_DIR}/${HASSOS_ID}_${BOARD_ID}-$(hassos_version)"
+function os_image_basename() {
+    echo "${BINARIES_DIR}/${OS_ID}_${BOARD_ID}-$(os_version)"
 }
 
-function hassos_rauc_compatible() {
-    echo "${HASSOS_ID}-${BOARD_ID}"
+function os_rauc_compatible() {
+    echo "${OS_ID}-${BOARD_ID}"
 }
 
-function hassos_version() {
+function os_version() {
     if [ -z "${VERSION_SUFFIX}" ]; then
         echo "${VERSION_MAJOR}.${VERSION_MINOR}"
     else

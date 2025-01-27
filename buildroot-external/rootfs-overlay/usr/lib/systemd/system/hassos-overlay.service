@@ -1,14 +1,14 @@
 [Unit]
-Description=HassOS overlay setup 
+Description=JHOS overlay setup
 DefaultDependencies=no
 RefuseManualStart=true
 RefuseManualStop=true
-Before=hassos-bind.target
+Before=os-bind.target
 After=mnt-overlay.mount
 
 [Service]
 Type=oneshot
-ExecStart=/usr/libexec/hassos-overlay
+ExecStart=/usr/libexec/os-overlay
 RemainAfterExit=true
 
 [Install]

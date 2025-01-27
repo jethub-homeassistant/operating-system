@@ -1,7 +1,7 @@
 [Unit]
 Description=Home Assistant CLI
-Wants=hassos-supervisor.service
-After=systemd-user-sessions.service plymouth-quit-wait.service getty-pre.target hassos-supervisor.service
+Wants=os-supervisor.service
+After=systemd-user-sessions.service plymouth-quit-wait.service getty-pre.target os-supervisor.service
 Conflicts=getty@%i.service
 
 # If additional gettys are spawned during boot then we should make
@@ -20,7 +20,7 @@ Before=rescue.service
 # The '-o' option value tells agetty to replace 'login' arguments with an
 # option to preserve environment (-p), followed by '--' for safety, and then
 # the entered username.
-ExecStart=/usr/sbin/hassos-cli
+ExecStart=/usr/sbin/os-cli
 Type=idle
 Restart=always
 RestartSec=0

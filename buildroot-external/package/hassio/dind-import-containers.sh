@@ -22,12 +22,12 @@ for image in $(ls -S /build/images/*.tar); do
 done
 
 # Tag the Supervisor how the OS expects it to be tagged
-supervisor=$(docker images --filter "label=io.hass.type=supervisor" --quiet)
-arch=$(docker inspect --format '{{ index .Config.Labels "io.hass.arch" }}' "${supervisor}")
-docker tag "${supervisor}" "ghcr.io/jethub-homeassistant/${arch}-hassio-supervisor:latest"
+supervisor=$(docker images --filter "label=io.jh.type=supervisor" --quiet)
+arch=$(docker inspect --format '{{ index .Config.Labels "io.jh.arch" }}' "${supervisor}")
+docker tag "${supervisor}" "ghcr.io/jethub-homeassistant/${arch}-jhio-supervisor:latest"
 
 # Setup AppArmor
 mkdir -p "/data/supervisor/apparmor"
-wget -O "/data/supervisor/apparmor/hassio-supervisor" "${APPARMOR_URL}"
+wget -O "/data/supervisor/apparmor/jhio-supervisor" "${APPARMOR_URL}"
 
 echo "{ \"channel\": \"${channel}\" }" > /data/supervisor/updater.json

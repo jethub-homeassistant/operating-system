@@ -12,4 +12,4 @@ key=$2
 
 openssl req -x509 -newkey rsa:4096 -keyout "${key}" \
                 -out "${cert}" -days 3650 -nodes \
-                -subj "/O=HassOS/CN=HassOS Self-signed Development Certificate"
+                -subj "/O=JHOS/CN=JHOS Self-signed Development Certificate"

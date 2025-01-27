@@ -6,7 +6,7 @@
 echo "Waiting for the Home Assistant CLI to be ready..."
 
 i=0
-while [ ! "$(docker ps -q -f name=hassio_cli)" ]; do
+while [ ! "$(docker ps -q -f name=jhio_cli)" ]; do
     sleep 1
     i=$((i+1))
     if [ $i = 60 ]; then
@@ -16,7 +16,7 @@ while [ ! "$(docker ps -q -f name=hassio_cli)" ]; do
 done
 
 docker container exec \
-    -ti hassio_cli \
+    -ti jhio_cli \
     /usr/bin/cli.sh
 
 case $? in

@@ -12,8 +12,8 @@ OS_AGENT_GOMOD = github.com/home-assistant/os-agent
 OS_AGENT_LDFLAGS = -X main.version=$(OS_AGENT_VERSION) -X main.board=$(BR2_PACKAGE_OS_AGENT_BOARD)
 
 define OS_AGENT_INSTALL_INIT_SYSTEMD
-	$(INSTALL) -D -m 0644 $(@D)/contrib/io.hass.conf \
-		$(TARGET_DIR)/etc/dbus-1/system.d/io.hass.conf
+	$(INSTALL) -D -m 0644 $(@D)/contrib/io.jh.conf \
+		$(TARGET_DIR)/etc/dbus-1/system.d/io.jh.conf
 	$(INSTALL) -D -m 0644 $(@D)/contrib/haos-agent.service \
 		$(TARGET_DIR)/usr/lib/systemd/system/haos-agent.service
 endef

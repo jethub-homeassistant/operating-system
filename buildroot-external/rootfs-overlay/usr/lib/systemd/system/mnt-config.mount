@@ -1,5 +1,5 @@
 [Unit]
-Description=HassOS config partition
+Description=JHOS config partition
 
 [Mount]
 What=/dev/disk/by-label/CONFIG

@@ -4,7 +4,7 @@
 # shellcheck source=../../../scripts/burn.sh
 . "${SCRIPT_DIR}/burn.sh"
 
-function hassos_pre_image() {
+function os_pre_image() {
     local BOOT_DATA="$(path_boot_dir)"
 
     cp "${BINARIES_DIR}/boot.scr" "${BOOT_DATA}/boot.scr"
@@ -16,11 +16,11 @@ function hassos_pre_image() {
         mkdir -p "${BOOT_DATA}/overlays"
         cp "${BINARIES_DIR}"/*.dtbo "${BOOT_DATA}/overlays/"
     fi
-    cp "${BOARD_DIR}/boot-env.txt" "${BOOT_DATA}/hassos-config.txt" || true
+    cp "${BOARD_DIR}/boot-env.txt" "${BOOT_DATA}/os-config.txt" || true
     cp "${BOARD_DIR}/cmdline.txt" "${BOOT_DATA}/cmdline.txt"
 }
 
-function hassos_post_image() {
+function os_post_image() {
     convert_disk_image_xz
     # support for create AmLogic burnable images
     [[ -f "${BINARIES_DIR}/platform.conf" ]] && _create_disk_burn

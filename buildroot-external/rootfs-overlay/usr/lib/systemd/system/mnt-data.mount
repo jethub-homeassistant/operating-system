@@ -1,15 +1,15 @@
 [Unit]
-Description=HassOS data partition
-Wants=hassos-expand.service
+Description=OS data partition
+Wants=os-expand.service
 DefaultDependencies=no
-After=hassos-expand.service
+After=os-expand.service
 Before=umount.target local-fs.target
 Conflicts=umount.target
-After=systemd-fsck@dev-disk-by\x2dlabel-hassos\x2ddata.service
-Wants=systemd-fsck@dev-disk-by\x2dlabel-hassos\x2ddata.service systemd-growfs@mnt-data.service
+After=systemd-fsck@dev-disk-by\x2dlabel-os\x2ddata.service
+Wants=systemd-fsck@dev-disk-by\x2dlabel-os\x2ddata.service systemd-growfs@mnt-data.service
 
 [Mount]
-What=/dev/disk/by-label/hassos-data
+What=/dev/disk/by-label/os-data
 Where=/mnt/data
 Type=ext4
 Options=commit=30

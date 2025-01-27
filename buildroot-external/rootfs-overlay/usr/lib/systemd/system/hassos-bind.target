@@ -1,5 +1,5 @@
 [Unit]
-Description=HassOS overlay targets
+Description=JHOS overlay targets
 Documentation=man:systemd.target(5)
 Before=sysinit.target
 

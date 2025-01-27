@@ -3,13 +3,13 @@ set -e
 
 BUILDER_UID="$(id -u)"
 BUILDER_GID="$(id -g)"
-CACHE_DIR="${CACHE_DIR:-$HOME/hassos-cache}"
+CACHE_DIR="${CACHE_DIR:-$HOME/os-cache}"
 ARGS="$*"
 COMMAND="${ARGS:-bash}"
 
 sudo mkdir -p "${CACHE_DIR}"
 sudo chown -R "${BUILDER_UID}:${BUILDER_GID}" "${CACHE_DIR}"
-sudo docker build -t hassos:local .
+sudo docker build -t os:local .
 
 if [ ! -f buildroot/Makefile ]; then
   # Initialize git submodule
@@ -23,4 +23,4 @@ sudo losetup -f > /dev/null
 sudo docker run -it --rm --privileged \
   -v "$(pwd):/build" -v "${CACHE_DIR}:/cache" \
   -e BUILDER_UID="${BUILDER_UID}" -e BUILDER_GID="${BUILDER_GID}" \
-  hassos:local ${COMMAND}
+  os:local ${COMMAND}

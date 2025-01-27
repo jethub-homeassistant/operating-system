@@ -1,12 +1,24 @@
 #!/bin/bash
+set -e
 
 BOOTSTATE_SIZE=8M
 SYSTEM_SIZE=256M
 KERNEL_SIZE=24M
 OVERLAY_SIZE=96M
-DATA_SIZE=6000M
+DATA_SIZE=512M
 
 function create_disk_image() {
+
+    data_img="${BASE_DIR}/images/data.ext4"
+    # Make image
+    rm -f "${data_img}"
+    truncate --size="512M" "${data_img}"
+    mkfs.ext4 -L "os-data" -E lazy_itable_init=0,lazy_journal_init=0 "${data_img}"
+
+    # Mount / init file structs
+    mkdir -p "${BASE_DIR}/images/data/"
+    sudo mount -o loop,discard "${data_img}" "${BASE_DIR}/images/data/"
+
     if [ -f "${BOARD_DIR}/genimage.cfg" ]; then
       echo "Using custom genimage.cfg from ${BOARD_DIR}"
     else
@@ -20,15 +32,15 @@ function create_disk_image() {
     # variables from meta file
     export DISK_SIZE BOOTLOADER KERNEL_FILE PARTITION_TABLE_TYPE BOOT_SIZE BOOT_SPL BOOT_SPL_SIZE
     # variables used in raucb manifest template
-    ota_compatible="$(hassos_rauc_compatible)"
-    ota_version="$(hassos_version)"
-    export ota_compatible ota_version
+    #ota_compatible="$(os_rauc_compatible)"
+    #ota_version="$(os_version)"
+    #export ota_compatible ota_version
     # variables used in genimage configs
     export BOOTSTATE_SIZE SYSTEM_SIZE KERNEL_SIZE OVERLAY_SIZE DATA_SIZE
-    RAUC_MANIFEST=$(tempio -template "${BR2_EXTERNAL_HASSOS_PATH}/ota/manifest.raucm.gtpl")
-    IMAGE_NAME="$(hassos_image_basename)"
+    #RAUC_MANIFEST=$(tempio -template "${BR2_EXTERNAL_JHOS_PATH}/ota/manifest.raucm.gtpl") #
+    IMAGE_NAME="$(os_image_basename)"
     BOOT_SPL_TYPE=$(test "$BOOT_SPL" == "true" && echo "spl" || echo "nospl")
-    export RAUC_MANIFEST IMAGE_NAME BOOT_SPL_TYPE
+    export IMAGE_NAME BOOT_SPL_TYPE #RAUC_MANIFEST (вырезал)
     SYSTEM_IMAGE=$(path_rootfs_img)
     DATA_IMAGE=$(path_data_img)
     export SYSTEM_IMAGE DATA_IMAGE
@@ -41,7 +53,7 @@ function create_disk_image() {
     genimage \
       --rootpath "$(path_boot_dir)" \
       --configdump - \
-      --includepath "${BOARD_DIR}:${BR2_EXTERNAL_HASSOS_PATH}/genimage" \
+      --includepath "${BOARD_DIR}:${BR2_EXTERNAL_JHOS_PATH}/genimage" \
       --config images-boot.cfg
 
     rm -rf "${GENIMAGE_TMPPATH}"
@@ -49,15 +61,15 @@ function create_disk_image() {
     genimage \
       --rootpath "${ROOTPATH_TMP}" \
       --configdump - \
-      --includepath "${BOARD_DIR}:${BR2_EXTERNAL_HASSOS_PATH}/genimage"
+      --includepath "${BOARD_DIR}:${BR2_EXTERNAL_JHOS_PATH}/genimage"
 }
 
 function convert_disk_image_virtual() {
     local hdd_ext="${1}"
     local hdd_img
-    hdd_img="$(hassos_image_name img)"
+    hdd_img="$(os_image_name img)"
     local hdd_virt
-    hdd_virt="$(hassos_image_name "${hdd_ext}")"
+    hdd_virt="$(os_image_name "${hdd_ext}")"
     local -a qemu_img_opts=()
 
     if [ "${hdd_ext}" == "vmdk" ]; then
@@ -71,9 +83,9 @@ function convert_disk_image_virtual() {
 
 function convert_disk_image_ova() {
     local hdd_img
-    hdd_img="$(hassos_image_name img)"
+    hdd_img="$(os_image_name img)"
     local hdd_ova
-    hdd_ova="$(hassos_image_name ova)"
+    hdd_ova="$(os_image_name ova)"
     local ova_data="${BINARIES_DIR}/ova"
 
     mkdir -p "${ova_data}"
@@ -88,7 +100,7 @@ function convert_disk_image_ova() {
 function convert_disk_image_xz() {
     local hdd_ext=${1:-img}
     local hdd_img
-    hdd_img="$(hassos_image_name "${hdd_ext}")"
+    hdd_img="$(os_image_name "${hdd_ext}")"
 
     rm -f "${hdd_img}.xz"
     xz -3 -T0 "${hdd_img}"
@@ -97,7 +109,7 @@ function convert_disk_image_xz() {
 function convert_disk_image_zip() {
     local hdd_ext=${1:-img}
     local hdd_img
-    hdd_img="$(hassos_image_name "${hdd_ext}")"
+    hdd_img="$(os_image_name "${hdd_ext}")"
 
     rm -f "${hdd_img}.zip"
     zip -j -m -q -r "${hdd_img}.zip" "${hdd_img}"

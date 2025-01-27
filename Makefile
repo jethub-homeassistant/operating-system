@@ -1,5 +1,5 @@
 BUILDDIR:=$(shell pwd)
-
+CPU_CORES := $(shell nproc)
 BUILDROOT=$(BUILDDIR)/buildroot
 BUILDROOT_EXTERNAL=$(BUILDDIR)/buildroot-external
 DEFCONFIG_DIR = $(BUILDROOT_EXTERNAL)/configs
@@ -48,3 +48,4 @@ help:
 	@echo "Run 'make all' to build all target images."
 	@echo "Run 'make clean' to clean the build output."
 	@echo "Run 'make <target>-config' to configure buildroot for a target."
+

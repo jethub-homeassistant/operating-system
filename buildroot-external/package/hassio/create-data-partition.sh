@@ -9,8 +9,8 @@ data_img="${dst_dir}/data.ext4"
 
 # Make image
 rm -f "${data_img}"
-truncate --size="6000M" "${data_img}"
-mkfs.ext4 -L "hassos-data" -E lazy_itable_init=0,lazy_journal_init=0 "${data_img}"
+truncate --size="512M" "${data_img}"
+mkfs.ext4 -L "os-data" -E lazy_itable_init=0,lazy_journal_init=0 "${data_img}"
 
 # Mount / init file structs
 mkdir -p "${build_dir}/data/"

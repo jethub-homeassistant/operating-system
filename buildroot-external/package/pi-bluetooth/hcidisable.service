@@ -7,4 +7,4 @@ Type=forking
 ExecStart=/usr/sbin/modprobe -r hci_uart
 
 [Install]
-WantedBy=hassos-hardware.target
+WantedBy=os-hardware.target

@@ -5,8 +5,8 @@
 
 function _create_disk_burn() {
     local hdd_ext=${1:-img}
-    local hdd_img="$(hassos_image_name "${hdd_ext}")"
-    local hdd_img_burn="$(hassos_image_name_burn "${hdd_ext}")"
+    local hdd_img="$(os_image_name "${hdd_ext}")"
+    local hdd_img_burn="$(os_image_name_burn "${hdd_ext}")"
 
     local boot_img="boot.vfat"
     local rootfs_img="$(path_rootfs_img)"
@@ -27,7 +27,7 @@ function _create_disk_burn() {
       echo "[LIST_VERIFY]"
       echo 'file="_aml_dtb.PARTITION"	main_type="PARTITION"		sub_type="_aml_dtb"'
       echo 'file="'"${bootloader_img}"'"	main_type="PARTITION"		sub_type="bootloader"'
-      echo 'file="'"${boot_img##*/}"'"		main_type="PARTITION"		sub_type="boothaos"'
+      echo 'file="'"${boot_img##*/}"'"		main_type="PARTITION"		sub_type="bootjhos"'
       echo 'file="'"${kernel_img##*/}"'"		main_type="PARTITION"		sub_type="kernela"'
       echo 'file="'"${rootfs_img##*/}"'"		main_type="PARTITION"		sub_type="systema"'
       echo 'file="'"${overlay_img##*/}"'"		main_type="PARTITION"		sub_type="overlay"'
@@ -78,7 +78,7 @@ function _create_dtb_file () {
       echo "/ {"
       echo "	partitions: partitions {"
       echo "		parts = <0x08>;"
-      echo "		part-0 = <&boothaos>;"
+      echo "		part-0 = <&bootjhos>;"
       echo "		part-1 = <&overlay>;"
       echo "		part-2 = <&kernela>;"
       echo "		part-3 = <&systema>;"
@@ -87,8 +87,8 @@ function _create_dtb_file () {
       echo "		part-6 = <&bootinfo>;"
       echo "		part-7 = <&data>;"
       echo ""
-      echo "		boothaos: boothaos {"
-      echo "			pname = \"boothaos\";"
+      echo "		bootjhos: bootjhos {"
+      echo "			pname = \"bootjhos\";"
       echo "			size = <0x00 ${boot_size}>;"
       echo "			mask = <0x01>;"
       echo "		};"
@@ -150,7 +150,7 @@ function _create_dtb_file () {
 
 function convert_disk_image_burn_zip() {
     local hdd_ext=${1:-img}
-    local hdd_img_burn="$(hassos_image_name_burn "${hdd_ext}")"
+    local hdd_img_burn="$(os_image_name_burn "${hdd_ext}")"
 
     rm -f "${hdd_img_burn}.zip"
     zip -j -m -q -r "${hdd_img_burn}.zip" "${hdd_img_burn}"

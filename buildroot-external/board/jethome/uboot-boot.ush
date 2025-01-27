@@ -18,28 +18,28 @@ test -n "${BOOT_B_LEFT}" || setenv BOOT_B_LEFT 3
 # Allows ConditionFirstBoot=
 test -n "${MACHINE_ID}" || setenv BOOT_CONDITION "systemd.condition-first-boot=true"
 
-# JHaOS bootargs
-setenv bootargs_hassos "zram.enabled=1 zram.num_devices=3 systemd.machine_id=${MACHINE_ID} clk_ignore_unused usb-storage.quirks=0x2537:0x1066:u,0x2537:0x1068:u fsck.repair=yes ${BOOT_CONDITION}"
+# JHOS bootargs
+setenv bootargs_os "zram.enabled=1 zram.num_devices=3 systemd.machine_id=${MACHINE_ID} clk_ignore_unused usb-storage.quirks=0x2537:0x1066:u,0x2537:0x1068:u fsck.repair=yes ${BOOT_CONDITION}"
 
 
 # Load board vars
 
-if test -n "${board_name}"; then setenv bootargs_hassos "${bootargs_hassos} board=${board}"; fi
+if test -n "${board_name}"; then setenv bootargs_os "${bootargs_os} board=${board}"; fi
 
-if test -n "${ethaddr}"; then setenv bootargs_hassos "${bootargs_hassos} mac=${ethaddr}";
-else if test -n "${mac}"; then setenv bootargs_hassos "${bootargs_hassos} mac=${mac}" ; fi
+if test -n "${ethaddr}"; then setenv bootargs_os "${bootargs_os} mac=${ethaddr}";
+else if test -n "${mac}"; then setenv bootargs_os "${bootargs_os} mac=${mac}" ; fi
 fi
 
-if test -n "${serial}"; then setenv bootargs_hassos "${bootargs_hassos} serial=${serial}"; fi
-if test -n "${usid}"; then setenv bootargs_hassos "${bootargs_hassos} usid=${usid}"; fi
+if test -n "${serial}"; then setenv bootargs_os "${bootargs_os} serial=${serial}"; fi
+if test -n "${usid}"; then setenv bootargs_os "${bootargs_os} usid=${usid}"; fi
 
 # JHaOS system A/B
 setenv bootargs_a "root=PARTUUID=48617373-06 ro rootwait"
 setenv bootargs_b "root=PARTUUID=48617373-08 ro rootwait"
 
-# Load environment from haos-config.txt
-if test -e ${devtype} ${devnum}:1 haos-config.txt; then
-  fatload ${devtype} ${devnum}:1 ${ramdisk_addr_r} haos-config.txt
+# Load environment from os-config.txt
+if test -e ${devtype} ${devnum}:1 os-config.txt; then
+  fatload ${devtype} ${devnum}:1 ${ramdisk_addr_r} os-config.txt
   env import -t ${ramdisk_addr_r} ${filesize}
 fi
 
@@ -100,7 +100,7 @@ for BOOT_SLOT in "${BOOT_ORDER}"; do
       setexpr BOOT_A_LEFT ${BOOT_A_LEFT} - 1
       echo "Trying to boot slot A, ${BOOT_A_LEFT} attempts remaining. Loading kernel ..."
       if load ${devtype} ${devnum}:5 ${kernel_addr_r} Image; then
-          setenv bootargs "${bootargs_hassos} ${bootargs_a} rauc.slot=A ${cmdline}"
+          setenv bootargs "${bootargs_os} ${bootargs_a} rauc.slot=A ${cmdline}"
       fi
     fi
   elif test "x${BOOT_SLOT}" = "xB"; then
@@ -108,7 +108,7 @@ for BOOT_SLOT in "${BOOT_ORDER}"; do
       setexpr BOOT_B_LEFT ${BOOT_B_LEFT} - 1
       echo "Trying to boot slot B, ${BOOT_B_LEFT} attempts remaining. Loading kernel ..."
       if load ${devtype} ${devnum}:7 ${kernel_addr_r} Image; then
-          setenv bootargs "${bootargs_hassos} ${bootargs_b} rauc.slot=B ${cmdline}"
+          setenv bootargs "${bootargs_os} ${bootargs_b} rauc.slot=B ${cmdline}"
       fi
     fi
   fi

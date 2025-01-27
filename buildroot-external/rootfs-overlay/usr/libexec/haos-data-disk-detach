@@ -8,12 +8,12 @@ rootdev=$(lsblk -no pkname "${rootpart}")
 # Wait up to 10s for devices to enumerate
 sleep 10s
 
-datapartitions=$(blkid --match-token LABEL="hassos-data" --output device)
+datapartitions=$(blkid --match-token LABEL="os-data" --output device)
 
 . /etc/os-release
 
 disable_data_partition() {
-    e2label "${1}" hassos-data-dis
+    e2label "${1}" os-data-dis
 }
 
 if [ "$VARIANT_ID" = "yellow" ]; then

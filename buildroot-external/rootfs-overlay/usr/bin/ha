@@ -5,7 +5,7 @@
 
 if [ -t 1 ]; then
 	# stdout (fd 1) must be terminal, otherwise `-t` causes error
-	docker exec -it hassio_cli ha "$@"
+	docker exec -it jhio_cli ha "$@"
 else
-	docker exec -i hassio_cli ha "$@"
+	docker exec -i jhio_cli ha "$@"
 fi

@@ -1,5 +1,5 @@
 [Unit]
-Description=HassOS hardware targets
+Description=JHOS hardware targets
 Documentation=man:systemd.target(5)
 
 [Install]

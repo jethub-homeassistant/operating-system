@@ -1,10 +1,10 @@
 #!/bin/sh
 # ==============================================================================
-# HassOS partition expander
+# JHOS partition expander
 # ==============================================================================
 set -e
 
-DEVICE_CHILD="$(findfs LABEL="hassos-data")"
+DEVICE_CHILD="$(findfs LABEL="os-data")"
 DEVICE_CHILD_NAME="$(basename "${DEVICE_CHILD}")"
 DEVICE_ROOT_NAME="$(lsblk -no pkname "${DEVICE_CHILD}")"
 DEVICE_ROOT="/dev/${DEVICE_ROOT_NAME}"
@@ -48,7 +48,7 @@ if [ "${UNUSED_BLOCKS}" -le "16384" ]; then
     exit 0
 fi
 
-echo "[INFO] Update hassos-data partition ${PART_NUM}"
+echo "[INFO] Update os-data partition ${PART_NUM}"
 echo ", +" | sfdisk --no-reread --no-tell-kernel -N "${PART_NUM}" "${DEVICE_ROOT}"
 sfdisk -V "${DEVICE_ROOT}"
 
@@ -56,13 +56,13 @@ sfdisk -V "${DEVICE_ROOT}"
 partx -u "${DEVICE_ROOT}"
 udevadm settle
 
-# Make sure /dev/disk/by-label/hassos-data is actually present before exiting.
+# Make sure /dev/disk/by-label/os-data is actually present before exiting.
 # This avoids a race condition with mnt-data.mount which might fail to bind
 # otherwise:
-# Bound to unit dev-disk-by\x2dlabel-hassos\x2ddata.device, but unit isn't active.
-if ! systemctl start "dev-disk-by\\x2dlabel-hassos\\x2ddata.device"; then
+# Bound to unit dev-disk-by\x2dlabel-os\x2ddata.device, but unit isn't active.
+if ! systemctl start "dev-disk-by\\x2dlabel-os\\x2ddata.device"; then
     echo "[ERROR] Data partition not found!"
     exit 1
 fi
 
-echo "[INFO] Finished hassos-data partition resizing"
+echo "[INFO] Finished os-data partition resizing"
