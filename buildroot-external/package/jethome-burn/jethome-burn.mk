@@ -5,7 +5,8 @@
 #
 ################################################################################
 
-JETHOME_BURN_VERSION = 8d56980a5eabff379bfaf24b6eba0badae4b6a05
+JETHOME_BURN_VERSION = 87be932dceb6135c99dfc5a105a6345eff954f2c
+#8d56980a5eabff379bfaf24b6eba0badae4b6a05
 #3ffa2d05f41ed92888d413a0f8cee08cefcbd240
 #b147825d93a5b4cb6db46a72630b676a9eb07a2d
 #b573f5581c3f8c30d980dc9b37f21694b8740452
