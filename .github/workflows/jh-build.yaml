@@ -18,7 +18,7 @@ on:
         default: true
 
 env:
-  PYTHON_VERSION: "3.13"
+  PYTHON_VERSION: "3.10"
 
 jobs:
   prepare:
@@ -143,7 +143,7 @@ jobs:
             username: ${{ github.repository_owner }}
             password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and Push
-        uses: docker/build-push-action@v6.13.0
+        uses: docker/build-push-action@v6.10.0
         id: build_haos_builder
         with:
           context: .
