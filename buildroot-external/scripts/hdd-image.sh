@@ -4,7 +4,7 @@ set -e
 BOOTSTATE_SIZE=8M
 SYSTEM_SIZE=256M
 KERNEL_SIZE=24M
-OVERLAY_SIZE=96M
+OVERLAY_SIZE=64M
 DATA_SIZE=512M
 
 function create_disk_image() {
@@ -14,6 +14,10 @@ function create_disk_image() {
     rm -f "${data_img}"
     truncate --size="512M" "${data_img}"
     mkfs.ext4 -L "os-data" -E lazy_itable_init=0,lazy_journal_init=0 "${data_img}"
+
+    # Put kernel into rootfs
+    mkdir -p "${TARGET_DIR}/boot"
+    cp "${BINARIES_DIR}/Image" "${TARGET_DIR}/boot/vmlinuz"
 
     # Mount / init file structs
     mkdir -p "${BASE_DIR}/images/data/"

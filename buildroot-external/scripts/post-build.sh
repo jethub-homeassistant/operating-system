@@ -45,4 +45,4 @@ fix_rootfs
 #install_bootloader_config
 
 # Fix overlay presets
-#"${HOST_DIR}/bin/systemctl" --root="${TARGET_DIR}" preset-all
+"${HOST_DIR}/bin/systemctl" --root="${TARGET_DIR}" preset-all
