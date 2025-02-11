@@ -15,10 +15,6 @@ function create_disk_image() {
     truncate --size="512M" "${data_img}"
     mkfs.ext4 -L "os-data" -E lazy_itable_init=0,lazy_journal_init=0 "${data_img}"
 
-    # Put kernel into rootfs
-    mkdir -p "${TARGET_DIR}/boot"
-    cp "${BINARIES_DIR}/Image" "${TARGET_DIR}/boot/vmlinuz"
-
     # Mount / init file structs
     mkdir -p "${BASE_DIR}/images/data/"
     sudo mount -o loop,discard "${data_img}" "${BASE_DIR}/images/data/"
@@ -36,15 +32,15 @@ function create_disk_image() {
     # variables from meta file
     export DISK_SIZE BOOTLOADER KERNEL_FILE PARTITION_TABLE_TYPE BOOT_SIZE BOOT_SPL BOOT_SPL_SIZE
     # variables used in raucb manifest template
-    #ota_compatible="$(os_rauc_compatible)"
+    ota_compatible="$(os_rauc_compatible)"
     #ota_version="$(os_version)"
     #export ota_compatible ota_version
     # variables used in genimage configs
     export BOOTSTATE_SIZE SYSTEM_SIZE KERNEL_SIZE OVERLAY_SIZE DATA_SIZE
-    #RAUC_MANIFEST=$(tempio -template "${BR2_EXTERNAL_JHOS_PATH}/ota/manifest.raucm.gtpl") #
+    RAUC_MANIFEST=$(tempio -template "${BR2_EXTERNAL_JHOS_PATH}/ota/manifest.raucm.gtpl") #
     IMAGE_NAME="$(os_image_basename)"
     BOOT_SPL_TYPE=$(test "$BOOT_SPL" == "true" && echo "spl" || echo "nospl")
-    export IMAGE_NAME BOOT_SPL_TYPE #RAUC_MANIFEST (вырезал)
+    export IMAGE_NAME BOOT_SPL_TYPE RAUC_MANIFEST
     SYSTEM_IMAGE=$(path_rootfs_img)
     DATA_IMAGE=$(path_data_img)
     export SYSTEM_IMAGE DATA_IMAGE

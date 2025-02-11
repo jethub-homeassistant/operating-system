@@ -12,7 +12,7 @@ HOOK_FILE=${3}
 . "${SCRIPT_DIR}/hdd-image.sh"
 . "${SCRIPT_DIR}/rootfs-layer.sh"
 . "${SCRIPT_DIR}/name.sh"
-#. "${SCRIPT_DIR}/rauc.sh"
+. "${SCRIPT_DIR}/rauc.sh"
 . "${HOOK_FILE}"
 
 # Cleanup
@@ -24,6 +24,7 @@ os_pre_image
 
 # Disk & OTA
 create_disk_image
+sync
 
 # Hook post image build stuff
 os_post_image
