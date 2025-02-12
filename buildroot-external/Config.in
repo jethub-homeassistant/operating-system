@@ -1,3 +1,4 @@
+source "$BR2_EXTERNAL_JHOS_PATH/package/tempio/Config.in.host"
 source "$BR2_EXTERNAL_JHOS_PATH/package/amlogic-boot-fip-e/Config.in"
 source "$BR2_EXTERNAL_JHOS_PATH/package/jethome-burn/Config.in"
 source "$BR2_EXTERNAL_JHOS_PATH/package/rtl8822cs-new/Config.in"

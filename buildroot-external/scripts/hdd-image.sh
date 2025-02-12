@@ -33,11 +33,11 @@ function create_disk_image() {
     export DISK_SIZE BOOTLOADER KERNEL_FILE PARTITION_TABLE_TYPE BOOT_SIZE BOOT_SPL BOOT_SPL_SIZE
     # variables used in raucb manifest template
     ota_compatible="$(os_rauc_compatible)"
-    #ota_version="$(os_version)"
-    #export ota_compatible ota_version
+    ota_version="$(os_version)"
+    export ota_compatible ota_version
     # variables used in genimage configs
     export BOOTSTATE_SIZE SYSTEM_SIZE KERNEL_SIZE OVERLAY_SIZE DATA_SIZE
-    RAUC_MANIFEST=$(tempio -template "${BR2_EXTERNAL_JHOS_PATH}/ota/manifest.raucm.gtpl") #
+    RAUC_MANIFEST=$(tempio -template "${BR2_EXTERNAL_JHOS_PATH}/ota/manifest.raucm.gtpl")
     IMAGE_NAME="$(os_image_basename)"
     BOOT_SPL_TYPE=$(test "$BOOT_SPL" == "true" && echo "spl" || echo "nospl")
     export IMAGE_NAME BOOT_SPL_TYPE RAUC_MANIFEST

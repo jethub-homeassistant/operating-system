@@ -24,7 +24,6 @@ os_pre_image
 
 # Disk & OTA
 create_disk_image
-sync
 
 # Hook post image build stuff
 os_post_image

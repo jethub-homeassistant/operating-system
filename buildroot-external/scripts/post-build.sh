@@ -14,7 +14,7 @@ BOARD_DIR=${2}
 
 # JHOS tasks
 fix_rootfs
-#install_tini_docker
+install_tini_docker
 
 # Write os-release
 # shellcheck disable=SC2153
