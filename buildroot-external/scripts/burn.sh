@@ -11,7 +11,7 @@ function _create_disk_burn() {
     local boot_img="boot.vfat"
     local rootfs_img="$(path_rootfs_img)"
     local overlay_img="overlay.ext4"
-    local data_img="$(path_data_img)"
+    #local data_img="$(path_data_img)"
     #local kernel_img="kernel.img"
 
     local ddrbin_img="DDR.USB"
@@ -28,10 +28,10 @@ function _create_disk_burn() {
       echo 'file="_aml_dtb.PARTITION"	main_type="PARTITION"		sub_type="_aml_dtb"'
       echo 'file="'"${bootloader_img}"'"	main_type="PARTITION"		sub_type="bootloader"'
       echo 'file="'"${boot_img##*/}"'"		main_type="PARTITION"		sub_type="bootjhos"'
-      echo 'file="'"${kernel_img##*/}"'"		main_type="PARTITION"		sub_type="kernela"'
+      #echo 'file="'"${kernel_img##*/}"'"		main_type="PARTITION"		sub_type="kernela"'
       echo 'file="'"${rootfs_img##*/}"'"		main_type="PARTITION"		sub_type="systema"'
       echo 'file="'"${overlay_img##*/}"'"		main_type="PARTITION"		sub_type="overlay"'
-      echo 'file="'"${data_img##*/}"'"		main_type="PARTITION"		sub_type="data"'
+      #echo 'file="'"${data_img##*/}"'"		main_type="PARTITION"		sub_type="data"'
     } > "${BINARIES_DIR}/image.cfg"
 
     _create_dtb_file
@@ -67,25 +67,25 @@ function size2number() {
 
 function _create_dtb_file () {
     local boot_size=$(size2number "${BOOT_SIZE}")
-    local kernel0_size=$(size2number "${KERNEL_SIZE}")
+    #local kernel0_size=$(size2number "${KERNEL_SIZE}")
     local system0_size=$(size2number "$SYSTEM_SIZE")
-    local kernel1_size=$(size2number "$KERNEL_SIZE")
+    #local kernel1_size=$(size2number "$KERNEL_SIZE")
     local system1_size=$(size2number "$SYSTEM_SIZE")
     local bootstate_size=$(size2number "$BOOTSTATE_SIZE")
     local overlay_size=$(size2number "$OVERLAY_SIZE")
-    local data_size=$(size2number "$DATA_SIZE")
+    #local data_size=$(size2number "$DATA_SIZE")
     {
       echo "/ {"
       echo "	partitions: partitions {"
       echo "		parts = <0x08>;"
       echo "		part-0 = <&bootjhos>;"
       echo "		part-1 = <&overlay>;"
-      echo "		part-2 = <&kernela>;"
+      #echo "		part-2 = <&kernela>;"
       echo "		part-3 = <&systema>;"
-      echo "		part-4 = <&kernelb>;"
+      #echo "		part-4 = <&kernelb>;"
       echo "		part-5 = <&systemb>;"
       echo "		part-6 = <&bootinfo>;"
-      echo "		part-7 = <&data>;"
+      #echo "		part-7 = <&data>;"
       echo ""
       echo "		bootjhos: bootjhos {"
       echo "			pname = \"bootjhos\";"
@@ -99,17 +99,17 @@ function _create_dtb_file () {
       echo "			mask = <0x04>;"
       echo "		};"
       echo ""
-      echo "		data: data {"
-      echo "			pname = \"data\";"
-      echo "			size = <0xffffffff 0xffffffff>;"
-      echo "			mask = <0x04>;"
-      echo "		};"
+      #echo "		data: data {"
+      #echo "			pname = \"data\";"
+      #echo "			size = <0xffffffff 0xffffffff>;"
+      #echo "			mask = <0x04>;"
+      #echo "		};"
       echo ""
-      echo "		kernela: kernela {"
-      echo "			pname = \"kernela\";"
-      echo "			size = <0x00 ${kernel0_size}>;"
-      echo "			mask = <0x04>;"
-      echo "		};"
+      #echo "		kernela: kernela {"
+      #echo "			pname = \"kernela\";"
+      #echo "			size = <0x00 ${kernel0_size}>;"
+      #echo "			mask = <0x04>;"
+      #echo "		};"
       echo ""
       echo "		systema: systema {"
       echo "			pname = \"systema\";"
@@ -117,11 +117,11 @@ function _create_dtb_file () {
       echo "			mask = <0x04>;"
       echo "		};"
       echo ""
-      echo "		kernelb: kernelb {"
-      echo "			pname = \"kernelb\";"
-      echo "			size = <0x00 ${kernel1_size}>;"
-      echo "			mask = <0x04>;"
-      echo "		};"
+      #echo "		kernelb: kernelb {"
+      #echo "			pname = \"kernelb\";"
+      #echo "			size = <0x00 ${kernel1_size}>;"
+      #echo "			mask = <0x04>;"
+      #echo "		};"
       echo ""
       echo "		systemb: systemb {"
       echo "			pname = \"systemb\";"

@@ -28,10 +28,6 @@ function path_boot_dir() {
     echo "${BINARIES_DIR}/boot"
 }
 
-function path_data_img() {
-    echo "${BINARIES_DIR}/data.ext4"
-}
-
 function path_rootfs_img() {
     echo "${BINARIES_DIR}/rootfs.erofs"
 }

@@ -23,12 +23,11 @@ function os_pre_image() {
 
     # Add kernel into rootfs
     if [ -f "${BINARIES_DIR}/Image" ]; then
-    cp "${BINARIES_DIR}/Image" "${TARGET_DIR}/boot/"
+    cp "${BINARIES_DIR}/Image" "${BOOT_DATA}/"
         else
     echo "ERROR: Kernel Image not found!"
     exit 1
     fi
-
 }
 
 function os_post_image() {

@@ -3,22 +3,9 @@ set -e
 
 BOOTSTATE_SIZE=2M
 SYSTEM_SIZE=256M
-KERNEL_SIZE=24M
 OVERLAY_SIZE=64M
-DATA_SIZE=512M
 
 function create_disk_image() {
-
-    data_img="${BASE_DIR}/images/data.ext4"
-    # Make image
-    rm -f "${data_img}"
-    truncate --size="512M" "${data_img}"
-    mkfs.ext4 -L "os-data" -E lazy_itable_init=0,lazy_journal_init=0 "${data_img}"
-
-    # Mount / init file structs
-    mkdir -p "${BASE_DIR}/images/data/"
-    sudo mount -o loop,discard "${data_img}" "${BASE_DIR}/images/data/"
-
     if [ -f "${BOARD_DIR}/genimage.cfg" ]; then
       echo "Using custom genimage.cfg from ${BOARD_DIR}"
     else
@@ -30,20 +17,20 @@ function create_disk_image() {
     export GENIMAGE_TMPPATH="${BUILD_DIR}/genimage.tmp"
 
     # variables from meta file
-    export DISK_SIZE BOOTLOADER KERNEL_FILE PARTITION_TABLE_TYPE BOOT_SIZE BOOT_SPL BOOT_SPL_SIZE
+    export DISK_SIZE BOOTLOADER PARTITION_TABLE_TYPE BOOT_SIZE BOOT_SPL BOOT_SPL_SIZE
     # variables used in raucb manifest template
     ota_compatible="$(os_rauc_compatible)"
     ota_version="$(os_version)"
     export ota_compatible ota_version
     # variables used in genimage configs
-    export BOOTSTATE_SIZE SYSTEM_SIZE KERNEL_SIZE OVERLAY_SIZE DATA_SIZE
+    export BOOTSTATE_SIZE SYSTEM_SIZE OVERLAY_SIZE
     RAUC_MANIFEST=$(tempio -template "${BR2_EXTERNAL_JHOS_PATH}/ota/manifest.raucm.gtpl")
     IMAGE_NAME="$(os_image_basename)"
     BOOT_SPL_TYPE=$(test "$BOOT_SPL" == "true" && echo "spl" || echo "nospl")
     export IMAGE_NAME BOOT_SPL_TYPE RAUC_MANIFEST
     SYSTEM_IMAGE=$(path_rootfs_img)
-    DATA_IMAGE=$(path_data_img)
-    export SYSTEM_IMAGE DATA_IMAGE
+    #DATA_IMAGE=$(path_data_img)
+    export SYSTEM_IMAGE #DATA_IMAGE
 
     trap 'rm -rf "${ROOTPATH_TMP}" "${GENIMAGE_TMPPATH}"' EXIT
     ROOTPATH_TMP="$(mktemp -d)"
