@@ -24,6 +24,7 @@ BR2_LINUX_KERNEL_CUSTOM_CONFIG_FILE="$(BR2_EXTERNAL_JHOS_PATH)/board/jethome/ker
 BR2_LINUX_KERNEL_CONFIG_FRAGMENT_FILES="$(BR2_EXTERNAL_JHOS_PATH)/kernel/v6.6.y/os.config $(BR2_EXTERNAL_JHOS_PATH)/kernel/v6.6.y/docker.config $(BR2_EXTERNAL_JHOS_PATH)/kernel/v6.6.y/device-support.config $(BR2_EXTERNAL_JHOS_PATH)/kernel/v6.6.y/device-support-wireless.config"
 BR2_LINUX_KERNEL_LZ4=y
 BR2_LINUX_KERNEL_DTS_SUPPORT=y
+BR2_LINUX_KERNEL_INSTALL_TARGET=y
 BR2_LINUX_KERNEL_INTREE_DTS_NAME="amlogic/meson-axg-jethome-jethub-j100 amlogic/meson-axg-jethome-jethub-j110-rev-2 amlogic/meson-axg-jethome-jethub-j110-rev-3"
 BR2_LINUX_KERNEL_DTB_OVERLAY_SUPPORT=y
 BR2_LINUX_KERNEL_NEEDS_HOST_OPENSSL=y

@@ -10,14 +10,14 @@ filename=hook
 hooks=install-check;
 
 [image.boot]
-filename=boot.vfat
+filename=spl.img
 hooks=install;
 
-[image.kernel]
-filename=kernel.img
-{{- if eq (env "BOOTLOADER") "tryboot" }}
-hooks=post-install;
-{{- end }}
+#[image.kernel]
+#filename=Image
+#{{- if eq (env "BOOTLOADER") "tryboot" }}
+#hooks=post-install;
+#{{- end }}
 
 [image.rootfs]
 filename=rootfs.img

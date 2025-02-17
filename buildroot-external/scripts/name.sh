@@ -24,6 +24,10 @@ function os_version() {
     fi
 }
 
+function path_spl_img() {
+    echo "${BINARIES_DIR}/spl.img"
+}
+
 function path_boot_dir() {
     echo "${BINARIES_DIR}/boot"
 }

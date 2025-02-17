@@ -4,6 +4,7 @@ set -e
 BOOTSTATE_SIZE=2M
 SYSTEM_SIZE=256M
 OVERLAY_SIZE=64M
+#BOOT_SPL_SIZE=8M
 
 function create_disk_image() {
     if [ -f "${BOARD_DIR}/genimage.cfg" ]; then
@@ -23,7 +24,7 @@ function create_disk_image() {
     ota_version="$(os_version)"
     export ota_compatible ota_version
     # variables used in genimage configs
-    export BOOTSTATE_SIZE SYSTEM_SIZE OVERLAY_SIZE
+    export BOOTSTATE_SIZE SYSTEM_SIZE OVERLAY_SIZE BOOT_ENV_SIZE
     RAUC_MANIFEST=$(tempio -template "${BR2_EXTERNAL_JHOS_PATH}/ota/manifest.raucm.gtpl")
     IMAGE_NAME="$(os_image_basename)"
     BOOT_SPL_TYPE=$(test "$BOOT_SPL" == "true" && echo "spl" || echo "nospl")
