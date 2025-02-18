@@ -85,12 +85,9 @@ fi
 # 1. boot
 # 2. Extended partition
 # 3. Overlay
-# 4. Data
-# 5. KernelA
-# 6. SystemA
-# 7. KernelB
-# 8. SystemB
-# 9. BootInfo
+# 4. SystemA
+# 5. SystemB
+# 6. BootInfo
 setenv bootargs
 for BOOT_SLOT in "${BOOT_ORDER}"; do
   if test "x${bootargs}" != "x"; then
@@ -99,7 +96,7 @@ for BOOT_SLOT in "${BOOT_ORDER}"; do
     if test ${BOOT_A_LEFT} -gt 0; then
       setexpr BOOT_A_LEFT ${BOOT_A_LEFT} - 1
       echo "Trying to boot slot A, ${BOOT_A_LEFT} attempts remaining. Loading kernel ..."
-      if load ${devtype} ${devnum}:5 ${kernel_addr_r} Image; then
+      if load ${devtype} ${devnum}:5 ${kernel_addr_r} /boot/Image; then
           setenv bootargs "${bootargs_os} ${bootargs_a} rauc.slot=A ${cmdline}"
       fi
     fi
@@ -107,7 +104,7 @@ for BOOT_SLOT in "${BOOT_ORDER}"; do
     if test ${BOOT_B_LEFT} -gt 0; then
       setexpr BOOT_B_LEFT ${BOOT_B_LEFT} - 1
       echo "Trying to boot slot B, ${BOOT_B_LEFT} attempts remaining. Loading kernel ..."
-      if load ${devtype} ${devnum}:7 ${kernel_addr_r} Image; then
+      if load ${devtype} ${devnum}:7 ${kernel_addr_r} /boot/Image; then
           setenv bootargs "${bootargs_os} ${bootargs_b} rauc.slot=B ${cmdline}"
       fi
     fi

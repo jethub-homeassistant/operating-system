@@ -51,7 +51,7 @@ function install_rauc_certs() {
 function install_bootloader_config() {
     if [ "${BOOTLOADER}" == "uboot" ]; then
         # shellcheck disable=SC1117
-        echo -e "/dev/disk/by-partlabel/os-bootstate\t0x0000\t${BOOT_ENV_SIZE}" > "${TARGET_DIR}/etc/fw_env.config"
+        echo -e "/dev/disk/by-partlabel/os-bootstate\t0x08000080\t${BOOT_ENV_SIZE}" > "${TARGET_DIR}/etc/fw_env.config"
     fi
 
     # Fix MBR

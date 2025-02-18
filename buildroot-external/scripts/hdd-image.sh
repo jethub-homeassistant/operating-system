@@ -4,7 +4,6 @@ set -e
 BOOTSTATE_SIZE=2M
 SYSTEM_SIZE=256M
 OVERLAY_SIZE=64M
-#BOOT_SPL_SIZE=8M
 
 function create_disk_image() {
     if [ -f "${BOARD_DIR}/genimage.cfg" ]; then
@@ -42,7 +41,7 @@ function create_disk_image() {
       --rootpath "$(path_boot_dir)" \
       --configdump - \
       --includepath "${BOARD_DIR}:${BR2_EXTERNAL_JHOS_PATH}/genimage" \
-      --config images-boot.cfg
+      #--config "${BOARD_DIR}/genimage.cfg"
 
     rm -rf "${GENIMAGE_TMPPATH}"
     # Generate OS image (no files are copied to temporary rootpath here)
