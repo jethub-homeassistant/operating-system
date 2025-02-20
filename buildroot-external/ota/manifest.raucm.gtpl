@@ -13,12 +13,6 @@ hooks=install-check;
 filename=uboot
 hooks=install;
 
-[image.kernel]
-filename=kernel.img
-{{- if eq (env "BOOTLOADER") "tryboot" }}
-hooks=post-install;
-{{- end }}
-
 [image.rootfs]
 filename=rootfs.img
 

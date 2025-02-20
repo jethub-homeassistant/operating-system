@@ -17,7 +17,7 @@ function create_disk_image() {
     export GENIMAGE_TMPPATH="${BUILD_DIR}/genimage.tmp"
 
     # variables from meta file
-    export DISK_SIZE BOOTLOADER PARTITION_TABLE_TYPE BOOT_SIZE BOOT_SPL BOOT_SPL_SIZE
+    export DISK_SIZE BOOTLOADER BOOT_SIZE BOOT_SPL BOOT_SPL_SIZE
     # variables used in raucb manifest template
     ota_compatible="$(os_rauc_compatible)"
     ota_version="$(os_version)"

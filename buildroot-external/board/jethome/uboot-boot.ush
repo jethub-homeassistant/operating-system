@@ -1,16 +1,16 @@
-part start ${devtype} ${devnum} 6 mmc_env
+setenv mmc_env 0x08000080
 
-mmc dev ${devnum}
+mmc dev 0
 
 setenv loadbootstate " \
     echo 'loading env...'; \
-    ${devtype} read ${ramdisk_addr_r} ${mmc_env} 0x10; \
-    env import -c ${ramdisk_addr_r} 0x2000;"
+    mmc read ${ramdisk_addr_r} ${mmc_env} 0x10; \
+    env import -c ${ramdisk_addr_r} 0x200000;"
 
 setenv storebootstate " \
     echo 'storing env...'; \
-    env export -c -s 0x2000 ${ramdisk_addr_r} BOOT_ORDER BOOT_A_LEFT BOOT_B_LEFT MACHINE_ID; \
-    ${devtype} write ${ramdisk_addr_r} ${mmc_env} 0x10;"
+    env export -c -s 0x200000 ${ramdisk_addr_r} BOOT_ORDER BOOT_A_LEFT BOOT_B_LEFT MACHINE_ID; \
+    mmc write ${ramdisk_addr_r} ${mmc_env} 0x10;"
 
 run loadbootstate
 test -n "${BOOT_ORDER}" || setenv BOOT_ORDER "A B"
@@ -39,14 +39,8 @@ if test -n "${usid}"; then setenv bootargs_os "${bootargs_os} usid=${usid}"; fi
 setenv bootargs_a "root=PARTUUID=48617373-06 ro rootwait"
 setenv bootargs_b "root=PARTUUID=48617373-08 ro rootwait"
 
-# Load environment from os-config.txt
-if test -e ${devtype} ${devnum}:1 os-config.txt; then
-  fatload ${devtype} ${devnum}:1 ${ramdisk_addr_r} os-config.txt
-  env import -t ${ramdisk_addr_r} ${filesize}
-fi
-
 # Load extraargs
-  fileenv ${devtype} ${devnum}:1 ${ramdisk_addr_r} cmdline.txt cmdline
+  fileenv mmc 0 ${ramdisk_addr_r} cmdline.txt cmdline
 
 echo "Checking board setup"
 if test "$board" = "jethub-j100"; then
@@ -66,30 +60,32 @@ if test "$board" = "jethub-j200"; then
   echo "Use JetHub D2 DT file"
 fi;
 
-echo "Loading device tree ${fdtfile}"
-fatload ${devtype} ${devnum}:1 ${fdt_addr_r} ${fdtfile}
-fdt addr ${fdt_addr_r}
+#echo "Loading device tree ${fdtfile}"
+#fatload mmc ${devnum}:1 ${fdt_addr_r} ${fdtfile}
+#fdt addr ${fdt_addr_r}
 
 # load dt overlays
 fdt resize 65536
 for overlay_file in ${overlays}; do
-  if fatload ${devtype} ${devnum}:1 ${ramdisk_addr_r} overlays/${overlay_file}.dtbo; then
+  if fatload mmc 0 ${ramdisk_addr_r} overlays/${overlay_file}.dtbo; then
     echo "Applying kernel provided DT overlay ${overlay_file}.dtbo"
     fdt apply ${ramdisk_addr_r} || setenv overlay_error "true"
   fi
 done
 if test "${overlay_error}" = "true"; then
   echo "Error applying DT overlays, restoring original DT"
-  fatload ${devtype} ${devnum}:1 ${fdt_addr_r} ${fdtfile}
+  fatload mmc 0 ${fdt_addr_r} ${fdtfile}
 fi
 
-# logical volumes get numbered after physical ones.
-# 1. boot
-# 2. Reserved partition
-# 3. Overlay
-# 4. SystemA
-# 5. SystemB
-# 6. BootInfo
+#Partition	        Offset	Size	 Index
+#spl	              0M	    4МБ    (not in partition)
+#os-reserved	      4M	    124M	 mmc 0:1
+#os-bootstate	    128M	    2M	   mmc 0:2
+#os-systemA	      130M	    256M	 mmc 0:3
+#os-systemB	      386M	    256M	 mmc 0:4
+#os-overlay	      642M	    64М	   mmc 0:5
+#os-reserved_end  706M      318M   mmc 0:6
+
 setenv bootargs
 for BOOT_SLOT in "${BOOT_ORDER}"; do
   if test "x${bootargs}" != "x"; then
@@ -98,7 +94,7 @@ for BOOT_SLOT in "${BOOT_ORDER}"; do
     if test ${BOOT_A_LEFT} -gt 0; then
       setexpr BOOT_A_LEFT ${BOOT_A_LEFT} - 1
       echo "Trying to boot slot A, ${BOOT_A_LEFT} attempts remaining. Loading kernel ..."
-      if load ${devtype} ${devnum}:5 ${kernel_addr_r} /boot/Image; then
+      if erofsload mmc 0 ${kernel_addr_r} /boot/Image; then
           setenv bootargs "${bootargs_os} ${bootargs_a} rauc.slot=A ${cmdline}"
       fi
     fi
@@ -106,7 +102,7 @@ for BOOT_SLOT in "${BOOT_ORDER}"; do
     if test ${BOOT_B_LEFT} -gt 0; then
       setexpr BOOT_B_LEFT ${BOOT_B_LEFT} - 1
       echo "Trying to boot slot B, ${BOOT_B_LEFT} attempts remaining. Loading kernel ..."
-      if load ${devtype} ${devnum}:7 ${kernel_addr_r} /boot/Image; then
+      if erofsload mmc 0 ${kernel_addr_r} /boot/Image; then
           setenv bootargs "${bootargs_os} ${bootargs_b} rauc.slot=B ${cmdline}"
       fi
     fi
@@ -122,6 +118,7 @@ else
   run storebootstate
   reset
 fi
+
 
 printenv bootargs
 echo "Starting kernel"

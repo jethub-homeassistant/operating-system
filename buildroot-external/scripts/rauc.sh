@@ -20,7 +20,7 @@ function write_rauc_config() {
     ota_compatible="$(os_rauc_compatible)"
 
     export ota_compatible
-    export BOOTLOADER PARTITION_TABLE_TYPE BOOT_SPL
+    export BOOTLOADER BOOT_SPL
 
     (
         "${HOST_DIR}/bin/tempio" \
