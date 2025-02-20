@@ -55,8 +55,8 @@ function install_bootloader_config() {
     fi
 
     # Fix MBR
-    if [ "${PARTITION_TABLE_TYPE}" == "mbr" ]; then
-        mkdir -p "${TARGET_DIR}/usr/lib/udev/rules.d"
-        cp -f "${BR2_EXTERNAL_JHOS_PATH}/bootloader/mbr-part.rules" "${TARGET_DIR}/usr/lib/udev/rules.d/"
-    fi
+   # if [ "${PARTITION_TABLE_TYPE}" == "mbr" ]; then
+   #     mkdir -p "${TARGET_DIR}/usr/lib/udev/rules.d"
+   #     cp -f "${BR2_EXTERNAL_JHOS_PATH}/bootloader/mbr-part.rules" "${TARGET_DIR}/usr/lib/udev/rules.d/"
+   # fi
 }

@@ -1,5 +1,7 @@
-part start ${devtype} ${devnum} 9 mmc_env
-${devtype} dev ${devnum}
+part start ${devtype} ${devnum} 6 mmc_env
+
+mmc dev ${devnum}
+
 setenv loadbootstate " \
     echo 'loading env...'; \
     ${devtype} read ${ramdisk_addr_r} ${mmc_env} 0x10; \
@@ -83,7 +85,7 @@ fi
 
 # logical volumes get numbered after physical ones.
 # 1. boot
-# 2. Extended partition
+# 2. Reserved partition
 # 3. Overlay
 # 4. SystemA
 # 5. SystemB
