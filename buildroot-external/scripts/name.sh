@@ -29,5 +29,5 @@ function path_boot_dir() {
 }
 
 function path_rootfs_img() {
-    echo "${BINARIES_DIR}/rootfs.erofs"
+    echo "${BINARIES_DIR}/rootfs.squashfs"
 }

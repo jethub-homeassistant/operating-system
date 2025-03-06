@@ -1,0 +1,123 @@
+From 2e6ff1fbb4e3d5a69670aab00b4014ac10f5d849 Mon Sep 17 00:00:00 2001
+From: Nikita Maslo <nikitamalco203@gmail.com>
+Date: Thu, 27 Feb 2025 11:32:52 +0300
+Subject: [PATCH] add custom partition support
+
+---
+ disk/Kconfig       |  3 ++
+ disk/Makefile      |  1 +
+ disk/part_custom.c | 79 ++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 83 insertions(+)
+ create mode 100644 disk/part_custom.c
+
+diff --git a/disk/Kconfig b/disk/Kconfig
+index 85496958074..1da127f9dc7 100644
+--- a/disk/Kconfig
++++ b/disk/Kconfig
+@@ -165,4 +165,7 @@ config SPL_PARTITION_TYPE_GUID
+ 	  Activate the configuration of GUID type
+ 	  for EFI partition
+ 
++config CUSTOM_PARTITION
++    bool "Support for custom partition table"
++
+ endmenu
+diff --git a/disk/Makefile b/disk/Makefile
+index 45588cf66e4..26f828a0e07 100644
+--- a/disk/Makefile
++++ b/disk/Makefile
+@@ -17,4 +17,5 @@ obj-$(CONFIG_$(SPL_TPL_)DOS_PARTITION)   += part_dos.o
+ obj-$(CONFIG_$(SPL_TPL_)ISO_PARTITION)   += part_iso.o
+ obj-$(CONFIG_$(SPL_TPL_)AMIGA_PARTITION) += part_amiga.o
+ obj-$(CONFIG_$(SPL_TPL_)EFI_PARTITION)   += part_efi.o
++obj-$(CONFIG_CUSTOM_PARTITION)   += part_custom.o
+ endif
+diff --git a/disk/part_custom.c b/disk/part_custom.c
+new file mode 100644
+index 00000000000..7a3885506db
+--- /dev/null
++++ b/disk/part_custom.c
+@@ -0,0 +1,79 @@
++#include <common.h>
++#include <command.h>
++#include <malloc.h>
++#include <blk.h>
++#include <string.h>
++#include <stdio.h>
++#include <part.h>
++
++
++#define PARTITION_COUNT 6
++
++
++struct partition_entry {
++    char name[PART_NAME_LEN];
++    unsigned long offset;
++    unsigned long size;
++};
++
++static const struct partition_entry partitions[] = {
++    {"os-reserved",     4 * 0x100000, 124 * 0x100000},  // 4MB - 124MB
++    {"os-bootstate",    128 * 0x100000, 2 * 0x100000},  // 128MB - 2MB
++    {"os-systemA",      130 * 0x100000, 256 * 0x100000},  // 130MB - 256MB
++    {"os-systemB",      386 * 0x100000, 256 * 0x100000},  // 386MB - 256MB
++    {"os-overlay",      642 * 0x100000, 64 * 0x100000},  // 642MB - 64MB
++    {"os-reserved_end", 706 * 0x100000, 318 * 0x100000}   // 706MB - 318MB
++};
++
++static int part_get_info_custom(struct blk_desc *desc, int part,
++    struct disk_partition *info)
++{
++    if (part < 1 || part > (sizeof(partitions) / sizeof(partitions[0]))) {
++    return -1;
++    }
++    const struct partition_entry *p = &partitions[part - 1];
++
++    memset(info, 0, sizeof(*info));
++
++    info->start = p->offset / desc->blksz;
++    info->size = p->size / desc->blksz;
++    info->blksz = desc->blksz;
++
++    strncpy((char *)info->name, p->name, PART_NAME_LEN);
++    strncpy((char *)info->type, "Linux", PART_TYPE_LEN);
++
++    printf ("part: %u\n", part);
++    printf ("Partition Name: %s\n", info->name);
++    printf ("Partition Type: %s\n", info->type);
++    printf ("Start: %lu blocks\n", info->start);
++    printf ("Size: %lu blocks\n", info->size);
++    printf ("Block Size: %lu bytes\n", info->blksz);
++
++    return 0;
++}
++
++static int part_test_custom(struct blk_desc *desc)
++{
++
++    if (!desc || desc->blksz == 0 || desc->lba == 0) {
++        printf("ERROR: Invalid block device\n");
++        return -1;
++    }
++
++    unsigned long min_required_size = partitions[PARTITION_COUNT - 1].offset +
++                                      partitions[PARTITION_COUNT - 1].size;
++
++    if (desc->lba * desc->blksz < min_required_size) {
++        printf("ERROR: Device too small, available size: 0x%lx\n",
++               desc->lba * desc->blksz);
++        return -1;
++    }
++    return 0;
++}
++
++U_BOOT_PART_TYPE(custom_part) = {
++    .name       = "Custom Partitions",
++    .max_entries= PARTITION_COUNT,
++    .get_info   = part_get_info_ptr(part_get_info_custom),
++    .test       = part_test_custom,
++};
+\ No newline at end of file
+-- 
+2.43.0
+

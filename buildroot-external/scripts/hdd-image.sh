@@ -29,7 +29,6 @@ function create_disk_image() {
     BOOT_SPL_TYPE=$(test "$BOOT_SPL" == "true" && echo "spl" || echo "nospl")
     export IMAGE_NAME BOOT_SPL_TYPE RAUC_MANIFEST
     SYSTEM_IMAGE=$(path_rootfs_img)
-    #DATA_IMAGE=$(path_data_img)
     export SYSTEM_IMAGE #DATA_IMAGE
 
     trap 'rm -rf "${ROOTPATH_TMP}" "${GENIMAGE_TMPPATH}"' EXIT
@@ -37,18 +36,24 @@ function create_disk_image() {
 
     rm -rf "${GENIMAGE_TMPPATH}"
     # Generate boot FS image - run in a separate step with specific rootpath
-    genimage \
-      --rootpath "$(path_boot_dir)" \
-      --configdump - \
-      --includepath "${BOARD_DIR}:${BR2_EXTERNAL_JHOS_PATH}/genimage" \
-      #--config "${BOARD_DIR}/genimage.cfg"
 
-    rm -rf "${GENIMAGE_TMPPATH}"
-    # Generate OS image (no files are copied to temporary rootpath here)
     genimage \
-      --rootpath "${ROOTPATH_TMP}" \
+      --config "${BOARD_DIR}/genimage.cfg" \
       --configdump - \
-      --includepath "${BOARD_DIR}:${BR2_EXTERNAL_JHOS_PATH}/genimage"
+      --rootpath "$(path_boot_dir)" \
+      --outputpath "${GENIMAGE_OUTPUTPATH}"
+
+
+    #genimage \
+    #  --rootpath "$(path_boot_dir)" \
+    #  --configdump - \
+    #  --config "${BOARD_DIR}/jethub-j80/genimage.cfg"
+
+    #rm -rf "${GENIMAGE_TMPPATH}"
+    # Generate OS image (no files are copied to temporary rootpath here)
+    #genimage \
+    #  --rootpath "${ROOTPATH_TMP}" \
+    #  --configdump -
 }
 
 function convert_disk_image_virtual() {

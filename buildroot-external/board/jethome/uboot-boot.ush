@@ -78,7 +78,7 @@ if test "${overlay_error}" = "true"; then
 fi
 
 #Partition	        Offset	Size	 Index
-#spl	              0M	    4МБ    (not in partition)
+#uboot	            0M	    4МБ    (not in partition)
 #os-reserved	      4M	    124M	 mmc 0:1
 #os-bootstate	    128M	    2M	   mmc 0:2
 #os-systemA	      130M	    256M	 mmc 0:3
@@ -102,7 +102,7 @@ for BOOT_SLOT in "${BOOT_ORDER}"; do
     if test ${BOOT_B_LEFT} -gt 0; then
       setexpr BOOT_B_LEFT ${BOOT_B_LEFT} - 1
       echo "Trying to boot slot B, ${BOOT_B_LEFT} attempts remaining. Loading kernel ..."
-      if erofsload mmc 0 ${kernel_addr_r} /boot/Image; then
+      if erofsload mmc 0 ${kernel_addr_r}${kernel_addr_r} /boot/Image; then
           setenv bootargs "${bootargs_os} ${bootargs_b} rauc.slot=B ${cmdline}"
       fi
     fi
