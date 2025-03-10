@@ -1,0 +1,158 @@
+From b32dfe28d02e265d579dc32f4f9cf174b8424bca Mon Sep 17 00:00:00 2001
+From: Viacheslav Bocharov <adeep@lexina.in>
+Date: Mon, 10 Mar 2025 14:29:21 +0300
+Subject: [PATCH 4/4] update drv
+
+---
+ disk/Kconfig       |  4 +-
+ disk/part_custom.c | 96 +++++++++++++++++++++++-----------------------
+ 2 files changed, 50 insertions(+), 50 deletions(-)
+
+diff --git a/disk/Kconfig b/disk/Kconfig
+index e80b5d13cd3..22b0608a40d 100644
+--- a/disk/Kconfig
++++ b/disk/Kconfig
+@@ -179,6 +179,8 @@ config AML_GPT
+ 	   "AML_GPT_HELP"
+
+ config CUSTOM_PARTITION
+-    bool "Support for custom partition table"
++	bool "Support for custom partition table"
++	default y
++
+
+ endmenu
+diff --git a/disk/part_custom.c b/disk/part_custom.c
+index 7a3885506db..83beebac814 100644
+--- a/disk/part_custom.c
++++ b/disk/part_custom.c
+@@ -1,14 +1,14 @@
++// SPDX-License-Identifier: GPL-2.0+
++
+ #include <common.h>
+-#include <command.h>
++#include <dm.h>
+ #include <malloc.h>
+ #include <blk.h>
+ #include <string.h>
+ #include <stdio.h>
+ #include <part.h>
+
+-
+-#define PARTITION_COUNT 6
+-
++#define JRESCUE_PARTITION_COUNT 6
+
+ struct partition_entry {
+     char name[PART_NAME_LEN];
+@@ -17,63 +17,61 @@ struct partition_entry {
+ };
+
+ static const struct partition_entry partitions[] = {
+-    {"os-reserved",     4 * 0x100000, 124 * 0x100000},  // 4MB - 124MB
+-    {"os-bootstate",    128 * 0x100000, 2 * 0x100000},  // 128MB - 2MB
+-    {"os-systemA",      130 * 0x100000, 256 * 0x100000},  // 130MB - 256MB
+-    {"os-systemB",      386 * 0x100000, 256 * 0x100000},  // 386MB - 256MB
+-    {"os-overlay",      642 * 0x100000, 64 * 0x100000},  // 642MB - 64MB
+-    {"os-reserved_end", 706 * 0x100000, 318 * 0x100000}   // 706MB - 318MB
++	{"os-reserved",     4 * 0x100000, 124 * 0x100000},  // 4MB - 124MB
++	{"os-bootstate",    128 * 0x100000, 2 * 0x100000},  // 128MB - 2MB
++	{"os-systemA",      130 * 0x100000, 256 * 0x100000},  // 130MB - 256MB
++	{"os-systemB",      386 * 0x100000, 256 * 0x100000},  // 386MB - 256MB
++	{"os-overlay",      642 * 0x100000, 64 * 0x100000},  // 642MB - 64MB
++	{"os-reserved_end", 706 * 0x100000, 318 * 0x100000}   // 706MB - 318MB
+ };
+
+-static int part_get_info_custom(struct blk_desc *desc, int part,
+-    struct disk_partition *info)
++static int part_get_info_custom(struct blk_desc *desc, int part, struct disk_partition *info)
+ {
+-    if (part < 1 || part > (sizeof(partitions) / sizeof(partitions[0]))) {
+-    return -1;
+-    }
+-    const struct partition_entry *p = &partitions[part - 1];
++	if (part < 1 || part > (sizeof(partitions) / sizeof(partitions[0])))
++		return -1;
+
+-    memset(info, 0, sizeof(*info));
++	const struct partition_entry *p = &partitions[part - 1];
+
+-    info->start = p->offset / desc->blksz;
+-    info->size = p->size / desc->blksz;
+-    info->blksz = desc->blksz;
++	memset(info, 0, sizeof(*info));
+
+-    strncpy((char *)info->name, p->name, PART_NAME_LEN);
+-    strncpy((char *)info->type, BOOT_PART_TYPE, PART_TYPE_LEN);
++	info->start = p->offset / desc->blksz;
++	info->size = p->size / desc->blksz;
++	info->blksz = desc->blksz;
++	info->bootable = 0;
++	info->sys_ind = 0x83;
+
+-    printf ("part: %u\n", part);
+-    printf ("Partition Name: %s\n", info->name);
+-    printf ("Partition Type: %s\n", info->type);
+-    printf ("Start: %lu blocks\n", info->start);
+-    printf ("Size: %lu blocks\n", info->size);
+-    printf ("Block Size: %lu bytes\n", info->blksz);
++	strlcpy((char *)info->name, p->name, PART_NAME_LEN);
++	strlcpy((char *)info->type, BOOT_PART_TYPE, PART_TYPE_LEN);
+
+-    return 0;
++	printf("!got request: part: %i name: %s type: %s start: %lu size: %lu bsize: %lu\n", part,
++	       info->name, info->type, info->start, info->size, info->blksz);
++	disk_partition_clr_uuid(info);
++	disk_partition_clr_type_guid(info);
++	return 0;
+ }
+
+ static int part_test_custom(struct blk_desc *desc)
+ {
+-
+-    if (!desc || desc->blksz == 0 || desc->lba == 0) {
+-        printf("ERROR: Invalid block device\n");
+-        return -1;
+-    }
+-
+-    unsigned long min_required_size = partitions[PARTITION_COUNT - 1].offset +
+-                                      partitions[PARTITION_COUNT - 1].size;
+-
+-    if (desc->lba * desc->blksz < min_required_size) {
+-        printf("ERROR: Device too small, available size: 0x%lx\n",
+-               desc->lba * desc->blksz);
+-        return -1;
+-    }
+-    return 0;
++	if (!desc || desc->blksz == 0 || desc->lba == 0) {
++		printf("ERROR: Invalid block device\n");
++		return -1;
++	}
++
++	unsigned long min_required_size = partitions[JRESCUE_PARTITION_COUNT - 1].offset +
++					  partitions[JRESCUE_PARTITION_COUNT - 1].size;
++
++	if (desc->lba * desc->blksz < min_required_size) {
++		printf("ERROR: Device too small, available size: 0x%lx\n",
++		       desc->lba * desc->blksz);
++		return -1;
++	}
++	return 0;
+ }
+
+-U_BOOT_PART_TYPE(custom_part) = {
+-    .name       = "Custom Partitions",
+-    .max_entries= PARTITION_COUNT,
+-    .get_info   = part_get_info_ptr(part_get_info_custom),
+-    .test       = part_test_custom,
++U_BOOT_PART_TYPE(custom) = {
++	.name		= "Custom Partitions",
++	.part_type	= PART_TYPE_JRESCUE,
++	.max_entries	= JRESCUE_PARTITION_COUNT,
++	.get_info	= part_get_info_ptr(part_get_info_custom),
++	.test		= part_test_custom,
+ };
+\ No newline at end of file
+--
+2.43.0
+

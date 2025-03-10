@@ -1,7 +1,7 @@
-From 2e6ff1fbb4e3d5a69670aab00b4014ac10f5d849 Mon Sep 17 00:00:00 2001
+From 70e6e3e56762afe32602edefc05ab196af321ba7 Mon Sep 17 00:00:00 2001
 From: Nikita Maslo <nikitamalco203@gmail.com>
 Date: Thu, 27 Feb 2025 11:32:52 +0300
-Subject: [PATCH] add custom partition support
+Subject: [PATCH 1/4] add custom partition support
 
 ---
  disk/Kconfig       |  3 ++
@@ -11,13 +11,13 @@ Subject: [PATCH] add custom partition support
  create mode 100644 disk/part_custom.c
 
 diff --git a/disk/Kconfig b/disk/Kconfig
-index 85496958074..1da127f9dc7 100644
+index 5c65ad5065c..e80b5d13cd3 100644
 --- a/disk/Kconfig
 +++ b/disk/Kconfig
-@@ -165,4 +165,7 @@ config SPL_PARTITION_TYPE_GUID
- 	  Activate the configuration of GUID type
- 	  for EFI partition
- 
+@@ -178,4 +178,7 @@ config AML_GPT
+ 	help
+ 	   "AML_GPT_HELP"
+
 +config CUSTOM_PARTITION
 +    bool "Support for custom partition table"
 +
@@ -80,7 +80,7 @@ index 00000000000..7a3885506db
 +    info->blksz = desc->blksz;
 +
 +    strncpy((char *)info->name, p->name, PART_NAME_LEN);
-+    strncpy((char *)info->type, "Linux", PART_TYPE_LEN);
++    strncpy((char *)info->type, BOOT_PART_TYPE, PART_TYPE_LEN);
 +
 +    printf ("part: %u\n", part);
 +    printf ("Partition Name: %s\n", info->name);
@@ -118,6 +118,6 @@ index 00000000000..7a3885506db
 +    .test       = part_test_custom,
 +};
 \ No newline at end of file
--- 
+--
 2.43.0
 

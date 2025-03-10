@@ -1,0 +1,24 @@
+From 630b7d32bd1448d31ab6978bdcd088d4379f1a55 Mon Sep 17 00:00:00 2001
+From: Viacheslav Bocharov <adeep@lexina.in>
+Date: Mon, 10 Mar 2025 13:22:27 +0300
+Subject: [PATCH 3/4] part.h add JRESCUE part id
+
+---
+ include/part.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/part.h b/include/part.h
+index 022199c81f1..adf1d3a4609 100644
+--- a/include/part.h
++++ b/include/part.h
+@@ -31,6 +31,7 @@ struct block_drvr {
+ #define PART_TYPE_AMIGA		0x04
+ #define PART_TYPE_EFI		0x05
+ #define PART_TYPE_AML		0x06
++#define PART_TYPE_JRESCUE	0x07
+ 
+ /* maximum number of partition entries supported by search */
+ #define DOS_ENTRY_NUMBERS	8
+-- 
+2.43.0
+

@@ -1,0 +1,25 @@
+From 69d311ae86eb885652bc202108164e27d8095feb Mon Sep 17 00:00:00 2001
+From: Viacheslav Bocharov <adeep@lexina.in>
+Date: Mon, 10 Mar 2025 13:22:02 +0300
+Subject: [PATCH 2/4] fix amlogic part code
+
+---
+ cmd/storage.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/cmd/storage.c b/cmd/storage.c
+index 98147fbe22c..2eb17b65070 100644
+--- a/cmd/storage.c
++++ b/cmd/storage.c
+@@ -20,6 +20,8 @@
+ #include <amlogic/asm/bl31_apis.h>
+ #include <amlogic/asm/secure_apb.h>
+ 
++#include <display_options.h>
++
+ #undef pr_info
+ #define pr_info       printf
+ 
+-- 
+2.43.0
+
