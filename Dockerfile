@@ -1,4 +1,4 @@
-FROM debian:bullseye
+FROM debian:bookworm
 
 # Set shell
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
