@@ -1,18 +1,26 @@
 #!/bin/bash
 # shellcheck disable=SC2155
 OVERLAY_SIZE=64M
-
+OVERLAY_OFFSET=642M
+BOOTSTATE_SIZE=2M
+BOOTSTATE_OFFSET=128M
+BOOT_SIZE=4M
+OS_RESERVED_SIZE=124M
+OS_RESERVED_OFFSET=4M
+OS_RESERVED_END_SIZE=318M
+OS_RESERVED_END_OFFSET=706M
+SYSTEMA_OFFSET=130M
+SYSTEMB_OFFSET=386M
 
 function _create_disk_burn() {
     local hdd_ext=${1:-img}
     local hdd_img="$(os_image_name "${hdd_ext}")"
     local hdd_img_burn="$(os_image_name_burn "${hdd_ext}")"
 
-    #local boot_img="u-boot.bin.sd.bin"
+    local boot_img="u-boot.bin.sd.bin"
     local rootfs_img="$(path_rootfs_img)"
     local overlay_img="overlay.ext4"
-    #local data_img="$(path_data_img)"
-    #local kernel_img="Image"
+    local kernel_img="Image"
 
     local ddrbin_img="DDR.USB"
     local ubootbin_img="UBOOT.USB"
@@ -27,11 +35,10 @@ function _create_disk_burn() {
       echo "[LIST_VERIFY]"
       echo 'file="_aml_dtb.PARTITION"	main_type="PARTITION"		sub_type="_aml_dtb"'
       echo 'file="'"${bootloader_img}"'"	main_type="PARTITION"		sub_type="bootloader"'
-      #echo 'file="'"${boot_img##*/}"'"		main_type="PARTITION"		sub_type="bootjhos"'
-      #echo 'file="'"${kernel_img##*/}"'"		main_type="PARTITION"		sub_type="kernela"'
+      echo 'file="'"${boot_img##*/}"'"		main_type="PARTITION"		sub_type="bootjhos"'
+      echo 'file="'"${kernel_img##*/}"'"		main_type="PARTITION"		sub_type="kernela"'
       echo 'file="'"${rootfs_img##*/}"'"		main_type="PARTITION"		sub_type="systema"'
       echo 'file="'"${overlay_img##*/}"'"		main_type="PARTITION"		sub_type="overlay"'
-      #echo 'file="'"${data_img##*/}"'"		main_type="PARTITION"		sub_type="data"'
     } > "${BINARIES_DIR}/image.cfg"
 
     _create_dtb_file
@@ -66,51 +73,77 @@ function size2number() {
 
 
 function _create_dtb_file () {
-    local boot_size=$(size2number "${BOOT_SPL_SIZE}")
-    #local kernel0_size=$(size2number "${KERNEL_SIZE}")
-    local system0_size=$(size2number "$SYSTEM_SIZE")
-    #local kernel1_size=$(size2number "$KERNEL_SIZE")
-    local system1_size=$(size2number "$SYSTEM_SIZE")
-    local bootstate_size=$(size2number "$BOOT_ENV_SIZE")
-    local overlay_size=$(size2number "$OVERLAY_SIZE")
-    #local data_size=$(size2number "$DATA_SIZE")
+    local boot_size=$(size2number "${BOOT_SIZE}")
+    local os_reserved=$(size2number "${OS_RESERVED_SIZE}")
+    local os_reserved_offset=$(size2number "${OS_RESERVED_OFFSET}")
+    local systemA_size=$(size2number "${SYSTEM_SIZE}")
+    local systemA_offset=$(size2number "${SYSTEMA_OFFSET}")
+    local os_reserved_end=$(size2number "${OS_RESERVED_END_SIZE}")
+    local os_reserved_end_offset=$(size2number "${OS_RESERVED_END_OFFSET}")
+    local systemB_size=$(size2number "${SYSTEM_SIZE}")
+    local systemB_offset=$(size2number "${SYSTEMB_OFFSET}")
+    local bootstate_size=$(size2number "${BOOTSTATE_SIZE}")
+    local bootstate_offset=$(size2number "${BOOTSTATE_OFFSET}")
+    local overlay_size=$(size2number "${OVERLAY_SIZE}")
+    local overlay_offset=$(size2number "${OVERLAY_OFFSET}")
+
     {
       echo "/ {"
       echo "	partitions: partitions {"
-      echo "		parts = <0x05>;"
-      echo "		part-0 = <&bootloader>;"
-      echo "		part-1 = <&overlay>;"
-      echo "		part-2 = <&systema>;"
-      echo "		part-3 = <&systemb>;"
-      echo "		part-4 = <&bootinfo>;"
+      echo "		parts = <0x08>;"
+      echo "		part-0 = <&uboot>;"
+      echo "		part-1 = <&os_reserved>;"
+      echo "		part-2 = <&os_bootstate>;"
+      echo "		part-3 = <&os_systema>;"
+      echo "		part-4 = <&os_systemb>;"
+      echo "		part-5 = <&os_overlay>;"
+      echo "		part-6 = <&os_reserved_end>;"
       echo ""
-      echo "		bootloader: bootloader {"
-      echo "			pname = \"bootloader\";"
+      echo "		uboot: uboot {"
+      echo "			pname = \"uboot\";"
       echo "			size = <0x00 ${boot_size}>;"
+      echo "      offset = <0x00>;"
       echo "			mask = <0x01>;"
       echo "		};"
       echo ""
-      echo "		overlay: overlay {"
-      echo "			pname = \"overlay\";"
-      echo "			size = <0x00 ${overlay_size}>;"
+      echo "		os_reserved: os_reserved {"
+      echo "			pname = \"os_reserved\";"
+      echo "			size = <0x00 ${os_reserved}>;"
+      echo "      offset = <0x00 ${os_reserved_offset}>;"
       echo "			mask = <0x04>;"
       echo "		};"
       echo ""
-      echo "		systema: systema {"
-      echo "			pname = \"systema\";"
-      echo "			size = <0x00 ${system0_size}>;"
+      echo "		os_bootstate: os_bootstate {"
+      echo "			pname = \"os_bootstate\";"
+      echo "			size = <0x00 ${bootstate_size}>;"
+      echo "      offset = <0x00 ${bootstate_offset}>;"
+      echo "			mask = <0x04>;"
+      echo "		};"
+      echo ""
+      echo "		os_systema: os_systema {"
+      echo "			pname = \"os_systema\";"
+      echo "			size = <0x00 ${systemA_size}>;"
+      echo "      offset = <0x00 ${systemA_offset}>;"
       echo "			mask = <0x04>;"
       echo "		};"
       echo ""
       echo "		systemb: systemb {"
       echo "			pname = \"systemb\";"
-      echo "			size = <0x00 ${system1_size}>;"
+      echo "			size = <0x00 ${systemB_size}>;"
+      echo "      offset = <0x00 ${systemB_offset}>;"
       echo "			mask = <0x04>;"
       echo "		};"
       echo ""
-      echo "		bootinfo: bootinfo {"
-      echo "			pname = \"bootinfo\";"
-      echo "			size = <0x00 ${bootstate_size}>;"
+      echo "		os_overlay: os_overlay {"
+      echo "			pname = \"os_overlay\";"
+      echo "			size = <0x00 ${overlay_size}>;"
+      echo "      offset = <0x00 ${overlay_offset}>;"
+      echo "			mask = <0x04>;"
+      echo ""
+      echo "		os_reserved_end: os_reserved_end {"
+      echo "			pname = \"os_reserved_end\";"
+      echo "			size = <0x00 ${os_reserved_end}>;"
+      echo "      offset = <0x00 ${os_reserved_end_offset}>;"
       echo "			mask = <0x04>;"
       echo "		};"
       echo "	};"

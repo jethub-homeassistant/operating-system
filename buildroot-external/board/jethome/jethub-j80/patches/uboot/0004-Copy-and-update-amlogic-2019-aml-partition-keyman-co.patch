@@ -1,8 +1,8 @@
-From f3493d0c965f3415da212d4e17518aa42e4c4fce Mon Sep 17 00:00:00 2001
+From 9d7391718614b6d23b79d401809c756f5278b940 Mon Sep 17 00:00:00 2001
 From: Viacheslav Bocharov <adeep@lexina.in>
 Date: Tue, 3 Oct 2023 17:26:36 +0300
-Subject: [PATCH 04/10] Copy and update amlogic-2019 aml partition/keyman code
- to mainline (fixes)
+Subject: [PATCH] Copy and update amlogic-2019 aml partition/keyman code to
+ mainline (fixes)
 
 ---
  .../meson-axg-jethome-jethub-j100-u-boot.dtsi | 92 +++++++++++++++++
@@ -12,14 +12,13 @@ Subject: [PATCH 04/10] Copy and update amlogic-2019 aml partition/keyman code
  configs/jethub_j100_defconfig                 |  7 ++
  configs/jethub_j80_defconfig                  |  7 ++
  disk/Kconfig                                  | 13 +++
- disk/Makefile                                 |  1 +
  drivers/Kconfig                               |  4 +
  drivers/Makefile                              |  3 +
  drivers/mmc/Makefile                          |  3 +
  drivers/mmc/mmc.c                             | 99 ++++++++++++++++++-
  include/mmc.h                                 | 25 +++++
  include/part.h                                |  3 +
- 14 files changed, 267 insertions(+), 1 deletion(-)
+ 13 files changed, 266 insertions(+), 1 deletion(-)
 
 diff --git a/arch/arm/dts/meson-axg-jethome-jethub-j100-u-boot.dtsi b/arch/arm/dts/meson-axg-jethome-jethub-j100-u-boot.dtsi
 index 3ecb233f8e2..e0e6b2259cc 100644
@@ -28,7 +27,7 @@ index 3ecb233f8e2..e0e6b2259cc 100644
 @@ -4,6 +4,98 @@
   * Author: Vyacheslav Bocharov <adeep@lexina.in>
   */
-
+ 
 +/ {
 +	partitions: partitions {
 +		parts = <1>;
@@ -125,13 +124,13 @@ index 3ecb233f8e2..e0e6b2259cc 100644
  	status = "okay";
  	vref-supply = <&vddio_ao18>;
 diff --git a/cmd/Kconfig b/cmd/Kconfig
-index 22106464621..b8c4d106330 100644
+index df6d71c103f..1e2e9e3812f 100644
 --- a/cmd/Kconfig
 +++ b/cmd/Kconfig
-@@ -2729,6 +2729,11 @@ config CMD_REISER
+@@ -2724,6 +2724,11 @@ config CMD_REISER
  	    reiserls - list files
  	    reiserload - load a file
-
+ 
 +config AML_STORAGE
 +	bool "aml storage support"
 +	help
@@ -141,13 +140,13 @@ index 22106464621..b8c4d106330 100644
  	bool "yaffs2 - Access of YAFFS2 filesystem"
  	depends on YAFFS2
 diff --git a/cmd/Makefile b/cmd/Makefile
-index a521653ff8e..eba15a5ab1f 100644
+index 9a6790cc170..4c0a68e6491 100644
 --- a/cmd/Makefile
 +++ b/cmd/Makefile
-@@ -216,6 +216,9 @@ obj-$(CONFIG_CMD_ETHSW) += ethsw.o
+@@ -215,6 +215,9 @@ obj-$(CONFIG_CMD_ETHSW) += ethsw.o
  obj-$(CONFIG_CMD_AXI) += axi.o
  obj-$(CONFIG_CMD_PVBLOCK) += pvblock.o
-
+ 
 +obj-$(CONFIG_AML_STORAGE) += storage.o
 +obj-$(CONFIG_CMD_MMC) += aml_mmc.o
 +
@@ -161,7 +160,7 @@ index cdeadf72026..8a89b948b32 100644
 @@ -11,6 +11,9 @@ obj-y += exports.o
  obj-$(CONFIG_HUSH_PARSER) += cli_hush.o
  obj-$(CONFIG_AUTOBOOT) += autoboot.o
-
+ 
 +obj-$(CONFIG_AML_STORAGE) += partitions.o
 +obj-$(CONFIG_AML_STORAGE) += aml_dt.o
 +
@@ -205,7 +204,7 @@ index 85496958074..5c65ad5065c 100644
 @@ -165,4 +165,17 @@ config SPL_PARTITION_TYPE_GUID
  	  Activate the configuration of GUID type
  	  for EFI partition
-
+ 
 +config AML_PARTITION
 +	bool "Enable AML partition table"
 +	depends on PARTITIONS
@@ -225,9 +224,9 @@ index a073230c26d..8e40c303b7c 100644
 --- a/drivers/Kconfig
 +++ b/drivers/Kconfig
 @@ -158,6 +158,10 @@ source "drivers/watchdog/Kconfig"
-
+ 
  source "drivers/xen/Kconfig"
-
+ 
 +source "drivers/amlogic/Kconfig"
 +
 +source "drivers/efuse/Kconfig"
@@ -240,9 +239,9 @@ index bf73b7718ce..c3ad2ac0cff 100644
 --- a/drivers/Makefile
 +++ b/drivers/Makefile
 @@ -44,6 +44,9 @@ obj-$(CONFIG_$(SPL_)VIDEO) += video/
-
+ 
  obj-y += bus/
-
+ 
 +obj-$(CONFIG_AML_DRIVER) += amlogic/
 +obj-$(CONFIG_EFUSE) += efuse/
 +
@@ -255,23 +254,23 @@ index e9cf1fcc640..f5af85fdaab 100644
 +++ b/drivers/mmc/Makefile
 @@ -4,7 +4,10 @@
  # Wolfgang Denk, DENX Software Engineering, wd@denx.de.
-
+ 
  obj-y += mmc.o
 +obj-y += mmc_aml.o
  obj-$(CONFIG_$(SPL_)DM_MMC) += mmc-uclass.o
 +obj-$(CONFIG_CMD_MMC) += storage_emmc.o
 +obj-$(CONFIG_MMC_MESON_GX) += aml_emmc_partition.o
-
+ 
  ifdef CONFIG_$(SPL_TPL_)DM_MMC
  obj-$(CONFIG_$(SPL_TPL_)BOOTSTD) += mmc_bootdev.o
 diff --git a/drivers/mmc/mmc.c b/drivers/mmc/mmc.c
-index d96db7a0f83..878c18d51d1 100644
+index d96db7a0f83..2a63e697fe4 100644
 --- a/drivers/mmc/mmc.c
 +++ b/drivers/mmc/mmc.c
 @@ -27,6 +27,24 @@
  #include <div64.h>
  #include "mmc_private.h"
-
+ 
 +
 +// TODO amlogic
 +#include <linux/crc32.h>
@@ -291,12 +290,12 @@ index d96db7a0f83..878c18d51d1 100644
 +// end TODO
 +
  #define DEFAULT_CMD6_TIMEOUT_MS  500
-
+ 
  static int mmc_set_signal_voltage(struct mmc *mmc, uint signal_voltage);
 @@ -2392,6 +2410,12 @@ static int mmc_startup_v4(struct mmc *mmc)
  	}
  #endif
-
+ 
 +	/* dev life time estimate type A/B */
 +	mmc->dev_lifetime_est_typ_a
 +		= ext_csd[EXT_CSD_DEV_LIFETIME_EST_TYP_A];
@@ -307,7 +306,7 @@ index d96db7a0f83..878c18d51d1 100644
  	 * Host needs to enable ERASE_GRP_DEF bit if device is
  	 * partitioned. This bit will be lost every time after a reset
 @@ -2987,7 +3011,7 @@ static int mmc_complete_init(struct mmc *mmc)
-
+ 
  int mmc_init(struct mmc *mmc)
  {
 -	int err = 0;
@@ -331,7 +330,7 @@ index d96db7a0f83..878c18d51d1 100644
 +		}
 +	}
 +	info_disprotect &= ~DISPROTECT_KEY;
-
+ 
  	return err;
  }
 @@ -3196,3 +3232,64 @@ __weak int mmc_get_env_dev(void)
@@ -438,12 +437,12 @@ index 1022db3ffa7..721758c3c7b 100644
 +#define EXT_CSD_DEV_LIFETIME_EST_TYP_B	269	/* RO */
 +
  #define EXT_CSD_BKOPS_SUPPORT		502	/* RO */
-
+ 
  /*
 @@ -344,6 +353,20 @@ static inline bool mmc_is_tuning_cmd(uint cmdidx)
  #define ENHNCD_SUPPORT		(0x2)
  #define PART_ENH_ATTRIB		(0x1f)
-
+ 
 +#define US_PWR_WP_DIS_BIT      1<<3
 +#define US_PERM_WP_DIS_BIT     1<<4
 +#define WP_CLEAR_TYPE          0
@@ -479,7 +478,7 @@ index db34bc6bb7d..022199c81f1 100644
  #define PART_TYPE_AMIGA		0x04
  #define PART_TYPE_EFI		0x05
 +#define PART_TYPE_AML		0x06
-
+ 
  /* maximum number of partition entries supported by search */
  #define DOS_ENTRY_NUMBERS	8
  #define ISO_ENTRY_NUMBERS	64
@@ -490,6 +489,6 @@ index db34bc6bb7d..022199c81f1 100644
  /*
   * Type string for U-Boot bootable partitions
   */
---
-2.45.2
+-- 
+2.43.0
 

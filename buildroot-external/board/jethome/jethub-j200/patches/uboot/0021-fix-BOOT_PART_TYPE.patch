@@ -1,0 +1,25 @@
+From 84d70a35faf9eb9165e2c378d33bdb3372db8edf Mon Sep 17 00:00:00 2001
+From: Nikita Maslo <nikitamalco203@gmail.com>
+Date: Mon, 17 Mar 2025 12:37:56 +0300
+Subject: [PATCH 7/8] fix BOOT_PART_TYPE
+
+---
+ disk/part_custom.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/disk/part_custom.c b/disk/part_custom.c
+index 83beebac814..6d9772a39be 100644
+--- a/disk/part_custom.c
++++ b/disk/part_custom.c
+@@ -41,7 +41,7 @@ static int part_get_info_custom(struct blk_desc *desc, int part, struct disk_par
+ 	info->sys_ind = 0x83;
+ 
+ 	strlcpy((char *)info->name, p->name, PART_NAME_LEN);
+-	strlcpy((char *)info->type, "Linux", PART_TYPE_LEN);
++	strlcpy((char *)info->type, BOOT_PART_TYPE, PART_TYPE_LEN);
+ 
+ 	printf("!got request: part: %i name: %s type: %s start: %lu size: %lu bsize: %lu\n", part,
+ 	       info->name, info->type, info->start, info->size, info->blksz);
+-- 
+2.43.0
+

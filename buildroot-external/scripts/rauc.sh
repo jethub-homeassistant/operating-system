@@ -28,7 +28,6 @@ function write_rauc_config() {
     ) > "${TARGET_DIR}/etc/rauc/system.conf"
 }
 
-
 function install_rauc_certs() {
     local cert="/build/cert.pem"
 
@@ -51,7 +50,7 @@ function install_rauc_certs() {
 function install_bootloader_config() {
     if [ "${BOOTLOADER}" == "uboot" ]; then
         # shellcheck disable=SC1117
-        echo -e "/dev/disk/by-partlabel/os-bootstate\t0x8000000\t${BOOT_ENV_SIZE}" > "${TARGET_DIR}/etc/fw_env.config"
+        echo -e "/dev/disk/by-path/platform-d0072000.mmc-part2\t0x0000\t${BOOT_ENV_SIZE}" > "${TARGET_DIR}/etc/fw_env.config"
     fi
 
     # Fix MBR

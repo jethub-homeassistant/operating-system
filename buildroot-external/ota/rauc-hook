@@ -55,7 +55,7 @@ install_boot() {
 }
 
 install_spl() {
-    DEVICE_CHILD="$(findfs LABEL="hassos-boot")"
+    DEVICE_CHILD="$(findfs LABEL="os-boot")"
     DEVICE_ROOT="/dev/$(lsblk -no pkname "${DEVICE_CHILD}")"
     PART_TABLE="$(sfdisk -lqJ "${DEVICE_ROOT}")"
     PART_LABEL="$(echo "${PART_TABLE}" | jq -r '.partitiontable.label')"

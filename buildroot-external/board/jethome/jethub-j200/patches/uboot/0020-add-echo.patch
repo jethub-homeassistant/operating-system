@@ -1,0 +1,33 @@
+From fbb8eaea2a9be1b99d63ae483d9346c0a63fe126 Mon Sep 17 00:00:00 2001
+From: Nikita Maslo <nikitamalco203@gmail.com>
+Date: Fri, 14 Mar 2025 17:41:51 +0300
+Subject: [PATCH 6/8] add echo
+
+---
+ include/config_distro_bootcmd.h | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/include/config_distro_bootcmd.h b/include/config_distro_bootcmd.h
+index 50f8ee3c59a..c7d90e9f71d 100644
+--- a/include/config_distro_bootcmd.h
++++ b/include/config_distro_bootcmd.h
+@@ -540,10 +540,16 @@
+ 		"setenv bootargs; " \
+ 		"for BOOT_SLOT in \"${BOOT_ORDER}\"; do " \
+ 			"if test \"x${bootargs}\" != \"x\"; then " \
++			"echo \"testing xbootargs: ${bootargs}\"; "\
+ 			"elif test \"x${BOOT_SLOT}\" = \"xA\"; then " \
++				"echo \"testing xBOOT_SLOT: ${BOOT_SLOT}\"; "\
++				"echo \"DEBUG: BOOT_A_LEFT=${BOOT_A_LEFT}\"; "	\
++				"echo \"DEBUG: BOOT_B_LEFT=${BOOT_B_LEFT}\"; "	\
+ 				"if test ${BOOT_A_LEFT} -gt 0; then " \
++					"echo \"Current BOOT_A_LEFT=${BOOT_A_LEFT}\"; " \
+ 					"setexpr BOOT_A_LEFT ${BOOT_A_LEFT} - 1; " \
+ 					"echo \"Trying to boot slot A, ${BOOT_A_LEFT} attempts remaining. Loading kernel ...\"; " \
++					"ls mmc 0:3 /boot;" \
+ 					"if erofsload mmc 0:3 ${kernel_addr_r} /boot/Image; then " \
+ 						"setenv bootargs \"${bootargs_os} ${bootargs_a} rauc.slot=A rootfstype=erofs ${bootargs_devpart} console=ttyAML0,115200n8 console=tty0\"; " \
+ 					"fi; " \
+-- 
+2.43.0
+

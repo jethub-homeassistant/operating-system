@@ -26,11 +26,9 @@ function create_disk_image() {
     export BOOTSTATE_SIZE SYSTEM_SIZE OVERLAY_SIZE BOOT_ENV_SIZE
     RAUC_MANIFEST=$(tempio -template "${BR2_EXTERNAL_JHOS_PATH}/ota/manifest.raucm.gtpl")
     IMAGE_NAME="$(os_image_basename)"
-    BOOT_SPL_TYPE=$(test "$BOOT_SPL" == "true" && echo "spl" || echo "nospl")
-    export IMAGE_NAME BOOT_SPL_TYPE RAUC_MANIFEST
+    export IMAGE_NAME RAUC_MANIFEST
     SYSTEM_IMAGE=$(path_rootfs_img)
-    export SYSTEM_IMAGE #DATA_IMAGE
-
+    export SYSTEM_IMAGE
     trap 'rm -rf "${ROOTPATH_TMP}" "${GENIMAGE_TMPPATH}"' EXIT
     ROOTPATH_TMP="$(mktemp -d)"
 
@@ -40,14 +38,14 @@ function create_disk_image() {
     genimage \
       --config "${BOARD_DIR}/genimage.cfg" \
       --configdump - \
-      --rootpath "$(path_boot_dir)" \
+      --rootpath "$(path_rootfs_img)" \
       --outputpath "${GENIMAGE_OUTPUTPATH}"
 
 
     #genimage \
     #  --rootpath "$(path_boot_dir)" \
     #  --configdump - \
-    #  --config "${BOARD_DIR}/jethub-j80/genimage.cfg"
+    #  --config "${BOARD_DIR}/genimage.cfg"
 
     #rm -rf "${GENIMAGE_TMPPATH}"
     # Generate OS image (no files are copied to temporary rootpath here)

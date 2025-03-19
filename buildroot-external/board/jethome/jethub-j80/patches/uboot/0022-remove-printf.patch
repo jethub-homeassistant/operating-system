@@ -1,0 +1,89 @@
+From 0239cf39e6ed0815d6c4af8d930ee55865cfe576 Mon Sep 17 00:00:00 2001
+From: Nikita Maslo <nikitamalco203@gmail.com>
+Date: Mon, 17 Mar 2025 12:42:01 +0300
+Subject: [PATCH] remove printf
+
+---
+ disk/part_custom.c              |  2 --
+ include/config_distro_bootcmd.h | 28 +++++++++++++++-------------
+ 2 files changed, 15 insertions(+), 15 deletions(-)
+
+diff --git a/disk/part_custom.c b/disk/part_custom.c
+index 6d9772a39be..82eccce5308 100644
+--- a/disk/part_custom.c
++++ b/disk/part_custom.c
+@@ -43,8 +43,6 @@ static int part_get_info_custom(struct blk_desc *desc, int part, struct disk_par
+ 	strlcpy((char *)info->name, p->name, PART_NAME_LEN);
+ 	strlcpy((char *)info->type, BOOT_PART_TYPE, PART_TYPE_LEN);
+
+-	printf("!got request: part: %i name: %s type: %s start: %lu size: %lu bsize: %lu\n", part,
+-	       info->name, info->type, info->start, info->size, info->blksz);
+ 	disk_partition_clr_uuid(info);
+ 	disk_partition_clr_type_guid(info);
+ 	return 0;
+diff --git a/include/config_distro_bootcmd.h b/include/config_distro_bootcmd.h
+index c7d90e9f71d..43cd228be05 100644
+--- a/include/config_distro_bootcmd.h
++++ b/include/config_distro_bootcmd.h
+@@ -512,9 +512,10 @@
+ 	\
+ 	"boot_script=" \
+ 		"setenv mmc_env 40000; " \
++		"echo \"ramdisk_addr_r ${ramdisk_addr_r}\"; "\
+ 		"mmc dev 0; " \
+-		"setenv loadbootstate \"echo loading env...; mmc read ${ramdisk_addr_r} ${mmc_env} 0x10; env import -c ${ramdisk_addr_r} 0x2000;\"; " \
+-		"setenv storebootstate \"echo storing env...; env export -c -s 0x2000 ${ramdisk_addr_r} BOOT_ORDER BOOT_A_LEFT BOOT_B_LEFT MACHINE_ID; mmc write ${ramdisk_addr_r} ${mmc_env} 0x10;\"; " \
++		"setenv loadbootstate \"echo 'loading env...'; mmc read ${ramdisk_addr_r} ${mmc_env} 0x10; env import -c ${ramdisk_addr_r} 0x2000;\"; " \
++		"setenv storebootstate \"echo 'storing env...'; env export -c -s 0x2000 ${ramdisk_addr_r} BOOT_ORDER BOOT_A_LEFT BOOT_B_LEFT MACHINE_ID; mmc write ${ramdisk_addr_r} ${mmc_env} 0x10;\"; " \
+ 		"run loadbootstate; " \
+ 		"test -n \"${BOOT_ORDER}\" || setenv BOOT_ORDER \"A B\"; " \
+ 		"test -n \"${BOOT_A_LEFT}\" || setenv BOOT_A_LEFT 3; " \
+@@ -523,33 +524,34 @@
+ 		"test -n \"${MACHINE_ID}\" || setenv BOOT_CONDITION \"systemd.condition-first-boot=true\"; " \
+ 		"setenv bootargs_os \"zram.enabled=1 zram.num_devices=3 systemd.machine_id=${MACHINE_ID} clk_ignore_unused usb-storage.quirks=0x2537:0x1066:u,0x2537:0x1068:u fsck.repair=yes ${BOOT_CONDITION}\"; " \
+ 		"if test -n \"${board_name}\"; then setenv bootargs_os \"${bootargs_os} board=${board}\"; fi; " \
+-		"if test -n \"${ethaddr}\"; then setenv bootargs_os \"${bootargs_os} mac=${ethaddr}\"; " \
+-		"else if test -n \"${mac}\"; then setenv bootargs_os \"${bootargs_os} mac=${mac}\"; fi; fi; " \
++		"if test -n \"${ethaddr}\"; then " \
++			"setenv bootargs_os \"${bootargs_os} mac=${ethaddr}\"; " \
++		"else " \
++			"if test -n \"${mac}\"; then " \
++				"setenv bootargs_os \"${bootargs_os} mac=${mac}\"; " \
++			"fi; " \
++		"fi; " \
+ 		"if test -n \"${serial}\"; then setenv bootargs_os \"${bootargs_os} serial=${serial}\"; fi; " \
+ 		"if test -n \"${usid}\"; then setenv bootargs_os \"${bootargs_os} usid=${usid}\"; fi; " \
+ 		"setenv bootargs_a \"root=/dev/mmcblk0p3 ro rootwait\"; " \
+ 		"setenv bootargs_b \"root=/dev/mmcblk0p4 ro rootwait\"; " \
+-		"echo \"setenv bootargs_a/b\"; " \
+ 		"echo \"Checking board setup\"; " \
+ 		"if test \"$board\" = \"jethub-j200\"; then " \
+-			"echo \"Use JetHub D2 DT file\"; fi; " \
++			"echo \"Use JetHub D2 DT file\"; " \
++		"fi; " \
+ 		"if test \"$board\" = \"jethub-j80\"; then " \
+ 			"echo \"Loading device tree boot/meson-gxl-s905w-jethome-jethub-j80.dtb\"; " \
+ 			"erofsload mmc 0:3 ${fdt_addr_r} boot/meson-gxl-s905w-jethome-jethub-j80.dtb; " \
+-			"fdt addr ${fdt_addr_r}; fi; " \
++			"fdt addr ${fdt_addr_r}; " \
++		"fi; " \
+ 		"setenv bootargs; " \
+ 		"for BOOT_SLOT in \"${BOOT_ORDER}\"; do " \
+ 			"if test \"x${bootargs}\" != \"x\"; then " \
+-			"echo \"testing xbootargs: ${bootargs}\"; "\
++				"echo \"bootargs: ${bootargs}\"; "\
+ 			"elif test \"x${BOOT_SLOT}\" = \"xA\"; then " \
+-				"echo \"testing xBOOT_SLOT: ${BOOT_SLOT}\"; "\
+-				"echo \"DEBUG: BOOT_A_LEFT=${BOOT_A_LEFT}\"; "	\
+-				"echo \"DEBUG: BOOT_B_LEFT=${BOOT_B_LEFT}\"; "	\
+ 				"if test ${BOOT_A_LEFT} -gt 0; then " \
+-					"echo \"Current BOOT_A_LEFT=${BOOT_A_LEFT}\"; " \
+ 					"setexpr BOOT_A_LEFT ${BOOT_A_LEFT} - 1; " \
+ 					"echo \"Trying to boot slot A, ${BOOT_A_LEFT} attempts remaining. Loading kernel ...\"; " \
+-					"ls mmc 0:3 /boot;" \
+ 					"if erofsload mmc 0:3 ${kernel_addr_r} /boot/Image; then " \
+ 						"setenv bootargs \"${bootargs_os} ${bootargs_a} rauc.slot=A rootfstype=erofs ${bootargs_devpart} console=ttyAML0,115200n8 console=tty0\"; " \
+ 					"fi; " \
+--
+2.43.0
+

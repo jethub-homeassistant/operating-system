@@ -1,5 +1,5 @@
 #!/bin/bash
-# shellcheck disable=SC1090,SC1091
+# shellcheck disable=SC1090,SC1091,SC2086
 set -e
 
 SCRIPT_DIR=${BR2_EXTERNAL_JHOS_PATH}/scripts

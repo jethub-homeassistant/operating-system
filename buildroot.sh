@@ -10,7 +10,7 @@ BOARD="$1"
 shift
 
 if [[ -z "$BOARD" ]]; then
-  BOARD=jethub_j100
+  BOARD=jethub_j200
 fi
 
 sudo docker build -t os-builder .

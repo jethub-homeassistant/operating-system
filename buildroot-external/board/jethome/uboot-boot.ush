@@ -1,15 +1,16 @@
-setenv mmc_env 0x08000080
+###########################################
+setenv mmc_env 40000
 
 mmc dev 0
 
 setenv loadbootstate " \
-    echo 'loading env...'; \
+    echo "loading env..."; \
     mmc read ${ramdisk_addr_r} ${mmc_env} 0x10; \
-    env import -c ${ramdisk_addr_r} 0x200000;"
+    env import -c ${ramdisk_addr_r} 0x2000;"
 
 setenv storebootstate " \
     echo 'storing env...'; \
-    env export -c -s 0x200000 ${ramdisk_addr_r} BOOT_ORDER BOOT_A_LEFT BOOT_B_LEFT MACHINE_ID; \
+    env export -c -s 0x2000 ${ramdisk_addr_r} BOOT_ORDER BOOT_A_LEFT BOOT_B_LEFT MACHINE_ID; \
     mmc write ${ramdisk_addr_r} ${mmc_env} 0x10;"
 
 run loadbootstate
@@ -17,14 +18,13 @@ test -n "${BOOT_ORDER}" || setenv BOOT_ORDER "A B"
 test -n "${BOOT_A_LEFT}" || setenv BOOT_A_LEFT 3
 test -n "${BOOT_B_LEFT}" || setenv BOOT_B_LEFT 3
 
-setenv BLK_DEV_PART "blkdevparts=mmcblk0:124M@4M(os-reserved),2M@128M(os-bootstate),256M@130M(os-systemA),256M@386M(os-systemB),64M@642M(os-overlay),318M@706M(os-reserved_end)"
-
+# blkdevparts env
+setenv bootargs_devpart "blkdevparts=mmcblk0:124M@4M(os-reserved),2M@128M(os-bootstate),256M@130M(os-systemA),256M@386M(os-systemB),64M@642M(os-overlay),318M@706M(os-reserved_end)"
 # Allows ConditionFirstBoot=
 test -n "${MACHINE_ID}" || setenv BOOT_CONDITION "systemd.condition-first-boot=true"
 
 # JHOS bootargs
-setenv bootargs_os "zram.enabled=1 zram.num_devices=3 systemd.machine_id=${MACHINE_ID} clk_ignore_unused usb-storage.quirks=0x2537:0x1066:u,0x2537:0x1068:u fsck.repair=yes ${BOOT_CONDITION}"
-
+test -n "${bootargs_devpart}" || setenv bootargs_os "zram.enabled=1 zram.num_devices=3 systemd.machine_id=${MACHINE_ID} clk_ignore_unused usb-storage.quirks=0x2537:0x1066:u,0x2537:0x1068:u fsck.repair=yes ${BOOT_CONDITION}"
 
 # Load board vars
 
@@ -38,26 +38,10 @@ if test -n "${serial}"; then setenv bootargs_os "${bootargs_os} serial=${serial}
 if test -n "${usid}"; then setenv bootargs_os "${bootargs_os} usid=${usid}"; fi
 
 # JHaOS system A/B
-setenv bootargs_a "root=/dev/mmcblk0p3 ro rootwait"
-setenv bootargs_b "root=/dev/mmcblk0p4 ro rootwait"
-
-# Load extraargs
-  fileenv mmc 0 ${ramdisk_addr_r} cmdline.txt cmdline
+test -n "${bootargs_a}" || setenv bootargs_a "root=/dev/mmcblk0p3 ro rootwait"
+test -n "${bootargs_b}" || setenv bootargs_b "root=/dev/mmcblk0p4 ro rootwait"
 
 echo "Checking board setup"
-#if test "$board" = "jethub-j100"; then
-#    if test "$perev" = "02"; then
-#    # D1P + RTL8822CS
-#        echo "Applying DT kernel file for JetHub D1/P RTL8822CS device"
-#        setenv fdtfile "amlogic/meson-axg-jethome-jethub-j110-rev-2.dtb"
-#    fi;
-#    if test "$perev" = "03"; then
-#    # D1P + W155S1
-#        echo "Applying DT kernel file for JetHub D1/P W155S1 device"
-#        setenv fdtfile "amlogic/meson-axg-jethome-jethub-j110-rev-3.dtb"
-#   fi;
-#fi;
-
 if test "$board" = "jethub-j200"; then
   echo "Use JetHub D2 DT file"
 fi;
@@ -67,19 +51,6 @@ if test "$board" = "jethub-j80"; then
   erofsload mmc 0:3 ${fdt_addr_r} boot/meson-gxl-s905w-jethome-jethub-j80.dtb
   fdt addr ${fdt_addr_r}
 fi;
-
-# load dt overlays
-fdt resize 65536
-for overlay_file in ${overlays}; do
-  if fatload mmc 0:5 ${ramdisk_addr_r} overlays/${overlay_file}.dtbo; then
-    echo "Applying kernel provided DT overlay ${overlay_file}.dtbo"
-    fdt apply ${ramdisk_addr_r} || setenv overlay_error "true"
-  fi
-done
-if test "${overlay_error}" = "true"; then
-  echo "Error applying DT overlays, restoring original DT"
-  fatload mmc 0:5 ${fdt_addr_r} ${fdtfile}
-fi
 
 #Partition	        Offset	Size	 Index
 #uboot	            0M	    4МБ    (not in partition)
@@ -91,6 +62,8 @@ fi
 #os-reserved_end  706M      318M   mmc 0:6
 
 setenv bootargs
+#echo "bootorder ${BOOT_ORDER}"
+
 for BOOT_SLOT in "${BOOT_ORDER}"; do
   if test "x${bootargs}" != "x"; then
     # skip remaining slots
@@ -99,7 +72,7 @@ for BOOT_SLOT in "${BOOT_ORDER}"; do
       setexpr BOOT_A_LEFT ${BOOT_A_LEFT} - 1
       echo "Trying to boot slot A, ${BOOT_A_LEFT} attempts remaining. Loading kernel ..."
       if erofsload mmc 0:3 ${kernel_addr_r} /boot/Image; then
-          setenv bootargs "${bootargs_os} ${bootargs_a} rauc.slot=A rootfstype=erofs ${cmdline} ${BLK_DEV_PART} console=ttyAML0,115200n8"
+          setenv bootargs "${bootargs_os} ${bootargs_a} rauc.slot=A rootfstype=erofs ${bootargs_devpart}"
       fi
     fi
   elif test "x${BOOT_SLOT}" = "xB"; then
@@ -107,13 +80,11 @@ for BOOT_SLOT in "${BOOT_ORDER}"; do
       setexpr BOOT_B_LEFT ${BOOT_B_LEFT} - 1
       echo "Trying to boot slot B, ${BOOT_B_LEFT} attempts remaining. Loading kernel ..."
       if erofsload mmc 0:4 ${kernel_addr_r} /boot/Image; then
-          setenv bootargs "${bootargs_os} ${bootargs_b} rauc.slot=B rootfstype=erofs ${cmdline}  ${BLK_DEV_PART} console=ttyAML0,115200n8"
+          setenv bootargs "${bootargs_os} ${bootargs_b} rauc.slot=B rootfstype=erofs ${bootargs_devpart}"
       fi
     fi
   fi
 done
-
-#setenv bootargs "root=/dev/mmcblk0p3 blkdevparts=mmcblk0:124M@4M(os-reserved),2M@128M(os-bootstate),256M@130M(os-systemA),256M@386M(os-systemB),64M@642M(os-overlay),318M@706M(os-reserved_end) console=ttyAML0,115200n8"
 
 if test -n "${bootargs}"; then
   run storebootstate
@@ -131,7 +102,3 @@ booti ${kernel_addr_r} - ${fdt_addr_r}
 
 echo "Boot failed, resetting..."
 reset
-
-
-
-setenv bootargs "root=/dev/mmcblk0p3 rauc.slot=A ro rootwait blkdevparts=mmcblk0:124M@4M(os-reserved),2M@128M(os-bootstate),256M@130M(os-systemA),256M@386M(os-systemB),64M@642M(os-overlay),318M@706M(os-reserved_end) console=ttyAML0,115200n8"
