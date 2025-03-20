@@ -1,7 +1,7 @@
 From fbb8eaea2a9be1b99d63ae483d9346c0a63fe126 Mon Sep 17 00:00:00 2001
 From: Nikita Maslo <nikitamalco203@gmail.com>
 Date: Fri, 14 Mar 2025 17:41:51 +0300
-Subject: [PATCH 6/8] add echo
+Subject: [PATCH 15/17] add echo
 
 ---
  include/config_distro_bootcmd.h | 6 ++++++

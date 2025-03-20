@@ -24,6 +24,10 @@ function os_version() {
     fi
 }
 
+function path_os_test() {
+    echo "${BINARIES_DIR}/jrescue.bin"
+}
+
 function path_boot_dir() {
     echo "${BINARIES_DIR}/boot"
 }

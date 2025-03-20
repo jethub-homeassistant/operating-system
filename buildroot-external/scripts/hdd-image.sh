@@ -26,9 +26,10 @@ function create_disk_image() {
     export BOOTSTATE_SIZE SYSTEM_SIZE OVERLAY_SIZE BOOT_ENV_SIZE
     RAUC_MANIFEST=$(tempio -template "${BR2_EXTERNAL_JHOS_PATH}/ota/manifest.raucm.gtpl")
     IMAGE_NAME="$(os_image_basename)"
+    TEST_PART="$(path_os_test)"
     export IMAGE_NAME RAUC_MANIFEST
     SYSTEM_IMAGE=$(path_rootfs_img)
-    export SYSTEM_IMAGE
+    export SYSTEM_IMAGE TEST_PART
     trap 'rm -rf "${ROOTPATH_TMP}" "${GENIMAGE_TMPPATH}"' EXIT
     ROOTPATH_TMP="$(mktemp -d)"
 

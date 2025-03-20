@@ -1,7 +1,7 @@
 From 70e6e3e56762afe32602edefc05ab196af321ba7 Mon Sep 17 00:00:00 2001
 From: Nikita Maslo <nikitamalco203@gmail.com>
 Date: Thu, 27 Feb 2025 11:32:52 +0300
-Subject: [PATCH 1/8] add custom partition support
+Subject: [PATCH 10/17] add custom partition support
 
 ---
  disk/Kconfig       |  3 ++

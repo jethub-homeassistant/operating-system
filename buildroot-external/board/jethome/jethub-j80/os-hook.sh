@@ -10,6 +10,7 @@ function os_pre_image() {
     cp "${BINARIES_DIR}/boot.scr" "${BOOT_DATA}/boot.scr"
     mkdir -p "${BOOT_DATA}/amlogic"
     cp "${BINARIES_DIR}/meson-gxl-s905w-jethome-jethub-j80.dtb" "${BOOT_DATA}/amlogic/"
+    cp "${BOARD_DIR}/jrescue.bin" "${BINARIES_DIR}/jrescue.bin"
 
     if ls "${BINARIES_DIR}"/*.dtbo 1> /dev/null 2>&1; then
         echo "Found .dtbo files in ${BINARIES_DIR}"

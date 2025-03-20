@@ -1,7 +1,7 @@
 From b32dfe28d02e265d579dc32f4f9cf174b8424bca Mon Sep 17 00:00:00 2001
 From: Viacheslav Bocharov <adeep@lexina.in>
 Date: Mon, 10 Mar 2025 14:29:21 +0300
-Subject: [PATCH 4/8] update drv
+Subject: [PATCH 13/17] update drv
 
 ---
  disk/Kconfig       |  4 +-

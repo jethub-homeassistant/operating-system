@@ -1,7 +1,7 @@
 From 69d311ae86eb885652bc202108164e27d8095feb Mon Sep 17 00:00:00 2001
 From: Viacheslav Bocharov <adeep@lexina.in>
 Date: Mon, 10 Mar 2025 13:22:02 +0300
-Subject: [PATCH 2/8] fix amlogic part code
+Subject: [PATCH 11/17] fix amlogic part code
 
 ---
  cmd/storage.c | 2 ++

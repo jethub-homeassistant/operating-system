@@ -1,0 +1,49 @@
+From 9027c92167434d1006463dbbc1486e0ef7d61bae Mon Sep 17 00:00:00 2001
+From: Nikita Maslo <nikitamalco203@gmail.com>
+Date: Thu, 20 Mar 2025 17:37:38 +0300
+Subject: [PATCH] add part_test_custom rescue
+
+---
+ disk/part_custom.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
+
+diff --git a/disk/part_custom.c b/disk/part_custom.c
+index 82eccce5308..722634351e8 100644
+--- a/disk/part_custom.c
++++ b/disk/part_custom.c
+@@ -9,6 +9,7 @@
+ #include <part.h>
+ 
+ #define JRESCUE_PARTITION_COUNT 6
++#define JRESCUE_MAGIC_STRING "JRESCUE"
+ 
+ struct partition_entry {
+     char name[PART_NAME_LEN];
+@@ -63,6 +64,24 @@ static int part_test_custom(struct blk_desc *desc)
+ 		       desc->lba * desc->blksz);
+ 		return -1;
+ 	}
++
++	unsigned long jrescue_offset = 262142;
++    unsigned char buffer[1024];
++
++	unsigned long read_count = blk_dread(desc, jrescue_offset, 2, buffer);
++
++	if (read_count != 2) {
++		printf("ERROR: Failed to read 2 sectors starting from sector %lu\n", jrescue_offset);
++		return -1;
++	}
++
++	if (memcmp(buffer, "JRESCUE", 7) != 0) {
++		printf("ERROR: Invalid data at sector %lu, expected JRESCUE magic\n", jrescue_offset);
++		return -1;
++	}
++
++	printf("SUCCESS: JRESCUE found at sector %lu\n", jrescue_offset);
++
+ 	return 0;
+ }
+ 
+-- 
+2.43.0
+

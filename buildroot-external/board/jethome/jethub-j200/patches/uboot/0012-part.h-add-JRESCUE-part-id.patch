@@ -1,7 +1,7 @@
 From 630b7d32bd1448d31ab6978bdcd088d4379f1a55 Mon Sep 17 00:00:00 2001
 From: Viacheslav Bocharov <adeep@lexina.in>
 Date: Mon, 10 Mar 2025 13:22:27 +0300
-Subject: [PATCH 3/8] part.h add JRESCUE part id
+Subject: [PATCH 12/17] part.h add JRESCUE part id
 
 ---
  include/part.h | 1 +

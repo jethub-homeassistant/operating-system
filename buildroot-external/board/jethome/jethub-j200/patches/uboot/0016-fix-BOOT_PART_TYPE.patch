@@ -1,7 +1,7 @@
 From 84d70a35faf9eb9165e2c378d33bdb3372db8edf Mon Sep 17 00:00:00 2001
 From: Nikita Maslo <nikitamalco203@gmail.com>
 Date: Mon, 17 Mar 2025 12:37:56 +0300
-Subject: [PATCH 7/8] fix BOOT_PART_TYPE
+Subject: [PATCH 16/17] fix BOOT_PART_TYPE
 
 ---
  disk/part_custom.c | 2 +-
