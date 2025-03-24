@@ -21,8 +21,9 @@ index 1c1094cd6b77..7cd9d268c3b2 100644
                - haochuangyi,h96-max
 +              - jethome,jethub-j200
                - khadas,vim3l
+               - libretech,aml-s905d3-cc
                - seirobotics,sei610
            - const: amlogic,sm1
--- 
+--
 2.45.2
 
